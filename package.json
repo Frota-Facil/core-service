@@ -5,7 +5,13 @@
 	"scripts": {
 		"dev": "tsx watch --env-file=.env src/server.ts",
 		"build": "tsc --project tsconfig.json && tsc-alias",
-		"start": "node dist/server.js"
+		"start": "node dist/server.js",
+		"prepare": "husky"
+	},
+	"lint-staged": {
+		"**/*.{ts,js,json}": [
+			"biome check --write"
+		]
 	},
 	"author": "",
 	"license": "ISC",
@@ -14,6 +20,8 @@
 		"@biomejs/biome": "2.4.10",
 		"@types/node": "^25.5.2",
 		"drizzle-kit": "^0.31.10",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.4.0",
 		"tsc-alias": "^1.8.16",
 		"tsx": "^4.21.0",
 		"typescript": "^6.0.2"
