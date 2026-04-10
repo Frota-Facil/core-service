@@ -1,1 +1,1 @@
-export { users } from "@/modules/users/schema";
+export { users } from "@/domains/users/schema";
