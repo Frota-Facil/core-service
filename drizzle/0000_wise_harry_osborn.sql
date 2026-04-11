@@ -5,8 +5,8 @@ CREATE TABLE "users" (
 	"cpf" text NOT NULL,
 	"password_hash" text NOT NULL,
 	"role" text DEFAULT 'driver' NOT NULL,
-	"created_at" integer NOT NULL,
-	"updated_at" integer NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_email_unique" UNIQUE("email"),
 	CONSTRAINT "users_cpf_unique" UNIQUE("cpf")
 );

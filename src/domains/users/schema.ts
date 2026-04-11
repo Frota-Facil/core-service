@@ -1,4 +1,4 @@
-import { index, integer, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { USER_ROLES, type UserRoles } from "@/domains/users/roles";
 
 export const users = pgTable(
@@ -19,13 +19,9 @@ export const users = pgTable(
 			.$type<UserRoles>()
 			.default(USER_ROLES[0]),
 
-		createdAt: integer("created_at", { mode: "timestamp" })
-			.$defaultFn(() => new Date())
-			.notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
 
-		updatedAt: integer("updated_at", { mode: "timestamp" })
-			.$defaultFn(() => new Date())
-			.notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull(),
 	},
 	(table) => ({
 		roleIdx: index("users_role_idx").on(table.role),
