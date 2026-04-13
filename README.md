@@ -162,49 +162,6 @@ docker compose exec app npx biome check .
 
 ---
 
-## 🐶 Husky — pre-commit automático
-
-O **Husky** executa o **lint-staged** antes de cada commit, garantindo que nenhum código fora do padrão entre no repositório.
-
-### O que acontece em cada commit
-
-```
-git commit
-     │
-     ▼
-Husky dispara o hook pre-commit
-     │
-     ▼
-lint-staged roda o Biome apenas nos arquivos staged
-     │
-     ├── Arquivo OK       → commit continua ✅
-     └── Erro encontrado  → commit é bloqueado ❌
-```
-
-O lint-staged está configurado para checar e corrigir automaticamente arquivos `ts`, `js` e `json`:
-
-```json
-"lint-staged": {
-  "**/*.{ts,js,json}": [
-    "biome check --write"
-  ]
-}
-```
-
-### Configuração após clonar
-
-O Husky precisa ser inicializado uma vez na máquina local (fora do Docker, pois os hooks precisam estar no Git da máquina):
-
-```bash
-npm install
-```
-
-> O script `prepare` no `package.json` roda o `husky` automaticamente após o `npm install`.
-
-> ⚠️ Essa é a **única etapa que exige Node.js local**. Alternativamente, qualquer membro do time pode instalar o Node.js apenas para esse passo, sem precisar usá-lo para desenvolvimento.
-
----
-
 ## 🧹 Manutenção do Docker
 
 Rode periodicamente para evitar acúmulo de imagens antigas:
