@@ -6,7 +6,16 @@ import {
 	validatorCompiler,
 } from "fastify-type-provider-zod";
 
-export const app = fastify();
+export const app = fastify({
+	logger: {
+		transport: {
+			target: "pino-pretty",
+			options: {
+				translateTime: "HH:MM:ss Z",
+			},
+		},
+	},
+});
 
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
