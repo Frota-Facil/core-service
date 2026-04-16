@@ -31,3 +31,9 @@ export async function insertUser(
 	const [user] = await db.insert(users).values(data).returning();
 	return user;
 }
+
+export async function fetchUsers(): Promise<User[]> {
+  const foundUsers = await db.select().from(users);
+
+  return foundUsers;
+}
