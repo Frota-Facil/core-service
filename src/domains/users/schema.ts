@@ -27,3 +27,5 @@ export const users = pgTable(
 		roleIdx: index("users_role_idx").on(table.role),
 	}),
 );
+
+export type User = typeof users.$inferSelect;

@@ -7,6 +7,7 @@ const envSchema = z.object({
 	POSTGRES_DB: z.string().min(1),
 	POSTGRES_HOST: z.string().default("localhost"),
 	POSTGRES_PORT: z.coerce.number().default(5432),
+	JWT_SECRET: z.string().min(1),
 });
 
 export const env = envSchema.parse(process.env);

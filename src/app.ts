@@ -5,6 +5,7 @@ import {
 	serializerCompiler,
 	validatorCompiler,
 } from "fastify-type-provider-zod";
+import { usersRoute } from "./routes/user-route";
 
 export const app = fastify({
 	logger: {
@@ -25,6 +26,8 @@ app.register(fastifyCors, {
 	methods: ["GET", "POST", "PUT", "DELETE"],
 	credentials: true,
 });
+
+app.register(usersRoute);
 
 app.setErrorHandler((error: FastifyError, _req, reply) => {
 	const statusCode = error.statusCode ?? 500;
