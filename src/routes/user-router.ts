@@ -4,7 +4,7 @@ import { createUserSchema } from "@/contracts/users/create-user-schema";
 import { userResponseSchema } from "@/contracts/users/user-response-schema";
 import { createUserUseCase } from "@/use-cases/users/create-user";
 
-export async function usersRoute(app: FastifyInstance) {
+export async function userRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().post(
 		"/users",
 		{

@@ -5,7 +5,12 @@ import {
 	serializerCompiler,
 	validatorCompiler,
 } from "fastify-type-provider-zod";
-import { usersRoute } from "./routes/user-route";
+import { authorize } from "@/hooks/authorize";
+import { verifyJwt } from "@/hooks/verify-jwt";
+import jwtPlugin from "@/plugins/jwt";
+import { authRouter } from "@/routes/auth-router";
+import { userRouter } from "@/routes/user-router";
+import { USER_ROLES } from "./domains/users/roles";
 
 export const app = fastify({
 	logger: {
@@ -27,7 +32,20 @@ app.register(fastifyCors, {
 	credentials: true,
 });
 
-app.register(usersRoute);
+app.register(jwtPlugin);
+
+app.register(userRouter);
+app.register(authRouter);
+
+app.get(
+	"/admin",
+	{
+		preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
+	},
+	async () => {
+		return { message: "Área do admin" };
+	},
+);
 
 app.setErrorHandler((error: FastifyError, _req, reply) => {
 	const statusCode = error.statusCode ?? 500;

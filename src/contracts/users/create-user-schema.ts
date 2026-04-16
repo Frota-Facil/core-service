@@ -5,7 +5,7 @@ export const createUserSchema = z.object({
 	name: z.string(),
 	email: z.email(),
 	password: z.string(),
-	cpf: z.string(),
+	cpf: z.string().min(11).max(11),
 	role: z.enum(USER_ROLES).default(USER_ROLES[0]),
 });
 

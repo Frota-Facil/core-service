@@ -11,3 +11,15 @@ export const CpfAlreadyInUseError = createError(
 	"CPF já está em uso",
 	400,
 );
+
+export const UserNotFoundError = createError(
+	"UserNotFoundError",
+	"Usuário não encontrado",
+	404,
+);
+
+export const InvalidCredentialsError = createError(
+	"InvalidCredentialsError",
+	"Credenciais inválidas",
+	401,
+);

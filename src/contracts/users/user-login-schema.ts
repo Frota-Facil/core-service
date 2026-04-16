@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const userLoginSchema = z.object({
-	email: z.email(),
+	cpf: z.string().min(11).max(11),
 	password: z.string(),
 });
 
-export type UserLoginInput = z.infer<typeof userLoginSchema>;
+export type UserLoginDTO = z.infer<typeof userLoginSchema>;
