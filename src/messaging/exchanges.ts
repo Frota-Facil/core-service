@@ -1,3 +1,3 @@
 export const EXCHANGES = {
-  EVENTS: "app.events",
+	EVENTS: "app.events",
 } as const;
