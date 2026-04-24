@@ -11,6 +11,7 @@ import jwtPlugin from "@/plugins/jwt";
 import { authRouter } from "@/routes/auth-router";
 import { userRouter } from "@/routes/user-router";
 import { USER_ROLES } from "./domains/users/roles";
+import rabbitPlugin from "@/plugins/rabbitmq";
 
 export const app = fastify({
 	logger: {
@@ -36,6 +37,8 @@ app.register(jwtPlugin);
 
 app.register(userRouter);
 app.register(authRouter);
+
+app.register(rabbitPlugin);
 
 app.get(
 	"/admin",
