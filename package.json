@@ -27,6 +27,7 @@
 		"@fastify/cors": "^11.2.0",
 		"@fastify/error": "^4.2.0",
 		"@fastify/jwt": "^10.0.0",
+		"amqplib": "^1.0.3",
 		"bcryptjs": "^3.0.3",
 		"dotenv": "^17.4.1",
 		"drizzle-orm": "^0.45.2",

@@ -22,6 +22,34 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: sif-rabbitmq
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI
+
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+
+    networks:
+      - frotafacil-net
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   
   app:
     build:
@@ -38,15 +66,18 @@ services:
     env_file:
       - .env
     environment:
-    - NODE_ENV=developmen
+    - NODE_ENV=development
     restart: unless-stopped
     depends_on:
       postgres:
+          condition: service_healthy
+      rabbitmq:
           condition: service_healthy
     command: npm run dev
 
 volumes:
   postgres_data:
+  rabbitmq_data:
 
 networks:
   frotafacil-net:
