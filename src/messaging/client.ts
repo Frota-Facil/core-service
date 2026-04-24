@@ -7,7 +7,7 @@ export async function connectRabbit() {
 	const connection = await amqp.connect(RABBITMQ_AMQP_URL);
 
 	connection.on("error", (err) => {
-		console.error(`Erro·ao·conectar·com·o·rabbitMQ:·${err}`);
+		console.error(`Erro·ao·conectar·com·o·rabbitMQ: ${err}`);
 	});
 
 	connection.on("close", () => {
