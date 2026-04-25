@@ -33,7 +33,7 @@ export async function insertUser(
 }
 
 export async function fetchUsers(): Promise<User[]> {
-  const foundUsers = await db.select().from(users);
+	const foundUsers = await db.select().from(users);
 
-  return foundUsers;
+	return foundUsers;
 }

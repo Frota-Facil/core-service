@@ -15,6 +15,13 @@
 			"when": 1775936526219,
 			"tag": "0001_cute_ozymandias",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1777050220009,
+			"tag": "0002_steep_jamie_braddock",
+			"breakpoints": true
 		}
 	]
 }

@@ -8,10 +8,10 @@ import {
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import jwtPlugin from "@/plugins/jwt";
+import rabbitPlugin from "@/plugins/rabbitmq";
 import { authRouter } from "@/routes/auth-router";
 import { userRouter } from "@/routes/user-router";
 import { USER_ROLES } from "./domains/users/roles";
-import rabbitPlugin from "@/plugins/rabbitmq";
 
 export const app = fastify({
 	logger: {
