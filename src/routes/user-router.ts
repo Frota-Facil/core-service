@@ -21,7 +21,7 @@ export async function userRouter(app: FastifyInstance) {
 			},
 		},
 		async (request, reply) => {
-			const user = await createUserUseCase(request.body);
+			const user = await createUserUseCase(request.body, request.user.id);
 			return reply.status(201).send(user);
 		},
 	);

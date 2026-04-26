@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import type { CreateUserDTO } from "@/contracts/users/create-user-schema";
 import type { UserResponseDTO } from "@/contracts/users/user-response-schema";
+import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
 import {
 	findUserByCpf,
 	findUserByEmail,
@@ -10,9 +11,11 @@ import {
 	CpfAlreadyInUseError,
 	EmailAlreadyInUseError,
 } from "@/domains/users/errors";
+import { createAuditLog } from "@/use-cases/audit-log-service";
 
 export async function createUserUseCase(
 	input: CreateUserDTO,
+	performedBy?: string,
 ): Promise<UserResponseDTO> {
 	const [existingEmail, existingCpf] = await Promise.all([
 		findUserByEmail(input.email),
@@ -30,6 +33,12 @@ export async function createUserUseCase(
 		cpf: input.cpf,
 		role: input.role,
 		passwordHash,
+	});
+
+	await createAuditLog({
+		action: AUDIT_ACTIONS[0],
+		entityId: user.id,
+		performedBy,
 	});
 
 	return user;

@@ -1,0 +1,2 @@
+ALTER TABLE "audit_logs" ALTER COLUMN "performed_by" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_performed_by_users_id_fk" FOREIGN KEY ("performed_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
