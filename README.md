@@ -1,6 +1,6 @@
-# 🚛 FrotaFácil — Core Service
+# 🚛 SIF — Core Service
 
-API backend do projeto FrotaFácil, construída com **Fastify**, **DrizzleORM** e **PostgreSQL**, padronizada via **Docker** para garantir o mesmo ambiente em toda a equipe.
+API backend do projeto SIF, construída com **Fastify**, **DrizzleORM** e **PostgreSQL**, padronizada via **Docker** para garantir o mesmo ambiente em toda a equipe.
 
 ---
 
@@ -45,15 +45,7 @@ cd core-service
 cp .env.example .env
 ```
 
-Edite o `.env` se necessário. **Atenção:** o `POSTGRES_HOST` deve ser `postgres` (nome do serviço Docker), não `localhost`:
-
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=frotafacil
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-```
+Edite o `.env` se necessário. **Atenção:** se rodado com o docker, o `POSTGRES_HOST` deve ser `postgres` (nome do serviço Docker), não `localhost`, assim como o RABBITMQ_HOST:
 
 ### 3. Suba os containers pela primeira vez
 
@@ -65,6 +57,12 @@ docker compose up --build
 
 ```bash
 docker compose exec app npm run db:migrate
+```
+
+### 5. Em seguida rode o script seed para popular o banco
+
+```bash
+docker compose exec app npm run db:seed
 ```
 
 Pronto! A API estará disponível em `http://localhost:3333`.
@@ -106,7 +104,6 @@ Todos os scripts são executados **dentro do container** com `docker compose exe
 |---|---|
 | `docker compose exec app npm run db:generate` | Gera arquivos de migration a partir do schema |
 | `docker compose exec app npm run db:migrate` | Executa as migrations pendentes |
-| `docker compose exec app npm run db:studio` | Abre o Drizzle Studio (porta 4983) |
 | `docker compose exec app npm run build` | Compila o projeto TypeScript |
 
 ### Atalho: abrir um shell no container

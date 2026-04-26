@@ -16,7 +16,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
     networks:
-      - frotafacil-net
+      - sif-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -40,7 +40,7 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
 
     networks:
-      - frotafacil-net
+      - sif-net
 
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
@@ -55,14 +55,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    image: frotafacil-dev:latest
+    image: sif-dev:latest
     ports:
       - "3333:3333"
     volumes:
       - .:/app
       - /app/node_modules
     networks:
-      - frotafacil-net
+      - sif-net
     env_file:
       - .env
     environment:
@@ -80,5 +80,5 @@ volumes:
   rabbitmq_data:
 
 networks:
-  frotafacil-net:
+  sif-net:
     driver: bridge
