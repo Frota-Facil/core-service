@@ -5,13 +5,14 @@ import {
 	serializerCompiler,
 	validatorCompiler,
 } from "fastify-type-provider-zod";
+import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import jwtPlugin from "@/plugins/jwt";
 import rabbitPlugin from "@/plugins/rabbitmq";
 import { authRouter } from "@/routes/auth-router";
 import { userRouter } from "@/routes/user-router";
-import { USER_ROLES } from "./domains/users/roles";
+import { vehicleRouter } from "@/routes/vehicle-router";
 
 export const app = fastify({
 	logger: {
@@ -36,6 +37,7 @@ app.register(fastifyCors, {
 app.register(jwtPlugin);
 
 app.register(userRouter);
+app.register(vehicleRouter);
 app.register(authRouter);
 
 app.register(rabbitPlugin);
