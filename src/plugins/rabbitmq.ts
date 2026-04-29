@@ -2,9 +2,9 @@ import fp from "fastify-plugin";
 import { connectRabbit } from "@/messaging/client";
 import { setupRabbit } from "@/messaging/setup";
 
-export default fp(async (app) => {
-	await connectRabbit(app.log);
-	await setupRabbit(app.log);
+export default fp(async () => {
+	await connectRabbit();
+	await setupRabbit();
 
-	app.log.info("RabbitMQ pronto 🚀");
+	console.info("RabbitMQ pronto 🚀");
 });

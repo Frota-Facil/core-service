@@ -10,7 +10,7 @@ import { fetchUsersUseCase } from "@/use-cases/users/fetch-users";
 
 export async function userRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().post(
-		"/users",
+		"/admin/users",
 		{
 			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
 			schema: {
@@ -26,7 +26,7 @@ export async function userRouter(app: FastifyInstance) {
 		},
 	);
 	app.withTypeProvider<ZodTypeProvider>().get(
-		"/users",
+		"/admin/users",
 		{
 			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
 			schema: {
