@@ -20,7 +20,7 @@ export async function findUserByCpf(cpf: string): Promise<User | undefined> {
 	const [user] = await db
 		.select()
 		.from(users)
-		.where(eq(users.cpf, cpf))
+		.where(and(eq(users.cpf, cpf), eq(users.role, USER_ROLES[0])))
 		.limit(1);
 
 	return user;

@@ -26,7 +26,7 @@ export async function authRouter(app: FastifyInstance) {
 	);
 
 	app.withTypeProvider<ZodTypeProvider>().post(
-		"/auth/admin",
+		"/admin/auth",
 		{
 			schema: {
 				body: userLoginSchema,
