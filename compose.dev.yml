@@ -1,13 +1,11 @@
 services:
-  postgres:
+  postgres-dev:
     image: postgres:16-alpine
-    container_name: postgres
+    container_name: postgres-dev
     restart: unless-stopped
 
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    env_file:
+      - .env.dev
 
     ports:
       - "5432:5432"
@@ -18,18 +16,18 @@ services:
     networks:
       - sif-net-dev
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  rabbitmq:
+  rabbitmq-dev:
     image: rabbitmq:3.13-management
-    container_name: sif-rabbitmq
+    container_name: rabbitmq-dev
     restart: unless-stopped
 
     env_file:
-      - .env
+      - .env.dev
 
     ports:
       - "5672:5672"     # AMQP
@@ -46,12 +44,12 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
 
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 10s
       timeout: 5s
       retries: 5
   
-  app:
+  app-dev:
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -64,14 +62,12 @@ services:
     networks:
       - sif-net-dev
     env_file:
-      - .env
-    environment:
-    - NODE_ENV=development
+      - .env.dev
     restart: unless-stopped
     depends_on:
-      postgres:
+      postgres-dev:
           condition: service_healthy
-      rabbitmq:
+      rabbitmq-dev:
           condition: service_healthy
     command: npm run dev
 
