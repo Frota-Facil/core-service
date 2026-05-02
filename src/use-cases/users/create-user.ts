@@ -31,6 +31,9 @@ export async function createUserUseCase(
 		name: input.name,
 		email: input.email,
 		cpf: input.cpf,
+		cnh: input.cnh,
+		phone: input.phone,
+		department: input.department,
 		role: input.role,
 		passwordHash,
 	});
