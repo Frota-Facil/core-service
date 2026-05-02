@@ -11,6 +11,7 @@ import { verifyJwt } from "@/hooks/verify-jwt";
 import jwtPlugin from "@/plugins/jwt";
 import rabbitPlugin from "@/plugins/rabbitmq";
 import { authRouter } from "@/routes/auth-router";
+import { uploadRouter } from "@/routes/upload-router";
 import { userRouter } from "@/routes/user-router";
 import { vehicleRouter } from "@/routes/vehicle-router";
 
@@ -39,6 +40,7 @@ app.register(jwtPlugin);
 app.register(userRouter);
 app.register(vehicleRouter);
 app.register(authRouter);
+app.register(uploadRouter);
 
 app.register(rabbitPlugin);
 

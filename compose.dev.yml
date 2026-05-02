@@ -44,6 +44,41 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  minio-dev:
+    image: minio/minio:latest
+    container_name: minio-dev
+    ports:
+      - "9000:9000"  # API S3
+      - "9001:9001"  # Console web
+    volumes:
+      - minio_data:/data
+    env_file:
+      - .env.dev
+    networks:
+      - sif-net-dev
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  minio-setup-dev:
+    image: minio/mc:latest
+    container_name: minio-setup-dev
+    depends_on:
+      minio-dev:
+        condition: service_healthy
+    networks:
+      - sif-net-dev
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio-dev:9000 minioadmin minioadmin &&
+        mc mb --ignore-existing local/sif-dev &&
+        mc anonymous set public local/sif-dev
+      "
   
   app-dev:
     build:
@@ -65,11 +100,14 @@ services:
           condition: service_healthy
       rabbitmq-dev:
           condition: service_healthy
+      minio-dev:
+          condition: service_healthy
     command: npm run dev
 
 volumes:
   postgres_data:
   rabbitmq_data:
+  minio_data:
 
 networks:
   sif-net-dev:
