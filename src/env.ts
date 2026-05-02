@@ -10,12 +10,21 @@ const envSchema = z.object({
 	RABBITMQ_AMQP_HOST: z.string().default("localhost"),
 	RABBITMQ_AMQP_PORT: z.coerce.number().default(5672),
 	JWT_SECRET: z.string().min(1),
-	RABBITMQ_USER: z.string().min(1),
-	RABBITMQ_PASS: z.string().min(1),
+	RABBITMQ_DEFAULT_USER: z.string().min(1),
+	RABBITMQ_DEFAULT_PASS: z.string().min(1),
+	MINIO_ROOT_USER: z.string().min(1),
+	MINIO_ROOT_PASSWORD: z.string().min(1),
+	MINIO_HOST: z.string().min(1),
+	MINIO_PORT: z.coerce.number().default(9000),
+	MINIO_BUCKET: z.string().min(1),
 });
 
 export const env = envSchema.parse(process.env);
 
 export const DATABASE_URL = `postgres://${env.POSTGRES_USER}:${env.POSTGRES_PASSWORD}@${env.POSTGRES_HOST}:${env.POSTGRES_PORT}/${env.POSTGRES_DB}`;
 
-export const RABBITMQ_AMQP_URL = `amqp://${env.RABBITMQ_USER}:${env.RABBITMQ_PASS}@${env.RABBITMQ_AMQP_HOST}:${env.RABBITMQ_AMQP_PORT}`;
+export const RABBITMQ_AMQP_URL = `amqp://${env.RABBITMQ_DEFAULT_USER}:${env.RABBITMQ_DEFAULT_PASS}@${env.RABBITMQ_AMQP_HOST}:${env.RABBITMQ_AMQP_PORT}`;
+
+export const MINIO_URL = `http://${env.MINIO_HOST}:${env.MINIO_PORT}`;
+
+export const MINIO_PUBLIC_URL = `http://localhost:${env.MINIO_PORT}`;
