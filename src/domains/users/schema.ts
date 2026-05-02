@@ -10,6 +10,12 @@ export const users = pgTable(
 
 		email: text("email").notNull().unique(),
 
+		cnh: text("cnh").unique(),
+
+		phone: text("phone").notNull(),
+
+		department: text("department"),
+
 		cpf: text("cpf").notNull().unique(),
 
 		passwordHash: text("password_hash").notNull(),

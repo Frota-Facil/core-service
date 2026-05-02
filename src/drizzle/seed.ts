@@ -25,6 +25,8 @@ async function seed() {
 		name: "AdminSIF",
 		email: adminEmail,
 		cpf: adminCpf,
+		phone: "11999999999",
+		department: "SIF",
 		passwordHash: passwordHash,
 		role: USER_ROLES[1],
 	});
