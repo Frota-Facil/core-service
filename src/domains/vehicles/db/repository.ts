@@ -19,3 +19,20 @@ export async function fetchAllAvailable(): Promise<Vehicle[]> {
 
 	return foundVehicles;
 }
+
+export async function findByPlate(plate: string): Promise<Vehicle | undefined> {
+	const [vehicle] = await db
+		.select()
+		.from(vehicles)
+		.where(eq(vehicles.plate, plate))
+		.limit(1);
+
+	return vehicle;
+}
+
+export async function insertVehicle(
+	data: typeof vehicles.$inferInsert,
+): Promise<Vehicle> {
+	const [vehicle] = await db.insert(vehicles).values(data).returning();
+	return vehicle;
+}
