@@ -1,9 +1,14 @@
-import { pgTable, timestamp, uuid, integer } from "drizzle-orm/pg-core";
+import { integer, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
+import { routes } from "@/domains/routes/schema";
 
 export const tracks = pgTable("tracks", {
 	id: uuid("id").primaryKey().defaultRandom(),
 
-	routeId: uuid("route_id").notNull(),
+	routeId: uuid("route_id")
+		.notNull()
+		.references(() => routes.id, {
+			onDelete: "cascade",
+		}),
 
 	xCoordinate: integer("x_coordinate").notNull(),
 
