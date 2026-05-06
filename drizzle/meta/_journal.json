@@ -36,6 +36,20 @@
       "when": 1777728180961,
       "tag": "0004_striped_salo",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778110445567,
+      "tag": "0005_thankful_mentor",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778110882737,
+      "tag": "0006_fluffy_champions",
+      "breakpoints": true
     }
   ]
 }
