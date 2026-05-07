@@ -7,6 +7,12 @@ import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import { createUserUseCase } from "@/use-cases/users/create-user";
 import { fetchUsersUseCase } from "@/use-cases/users/fetch-users";
+import { updateUserSchema } from "@/contracts/users/update-user-schema";
+import { userIdParamSchema } from "@/contracts/users/user-id-param-schema";
+import { deleteUserUseCase } from "@/use-cases/users/delete-user";
+import { fetchUserByIdUseCase } from "@/use-cases/users/fetch-user-by-id";
+import { updateUserUseCase } from "@/use-cases/users/update-user";
+import { z } from "zod";
 
 export async function userRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().post(
@@ -38,6 +44,57 @@ export async function userRouter(app: FastifyInstance) {
 		async (_, reply) => {
 			const users = await fetchUsersUseCase();
 			return reply.status(200).send(users);
+		},
+	);
+		app.withTypeProvider<ZodTypeProvider>().get(
+		"/admin/users/:id",
+		{
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
+			schema: {
+				params: userIdParamSchema,
+				response: {
+					200: userResponseSchema,
+				},
+			},
+		},
+		async (request, reply) => {
+			const user = await fetchUserByIdUseCase(request.params.id);
+			return reply.status(200).send(user);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().put(
+		"/admin/users/:id",
+		{
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
+			schema: {
+				params: userIdParamSchema,
+				body: updateUserSchema,
+				response: {
+					200: userResponseSchema,
+				},
+			},
+		},
+		async (request, reply) => {
+			const user = await updateUserUseCase(request.params.id, request.body);
+			return reply.status(200).send(user);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().delete(
+		"/admin/users/:id",
+		{
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
+			schema: {
+				params: userIdParamSchema,
+				response: {
+					204: z.null(),
+				},
+			},
+		},
+		async (request, reply) => {
+			await deleteUserUseCase(request.params.id);
+			return reply.status(204).send(null);
 		},
 	);
 }

@@ -50,3 +50,37 @@ export async function fetchUsers(): Promise<User[]> {
 
 	return foundUsers;
 }
+export async function findUserById(id: string): Promise<User | undefined> {
+	const [user] = await db
+		.select()
+		.from(users)
+		.where(eq(users.id, id))
+		.limit(1);
+
+	return user;
+}
+
+export async function updateUserById(
+	id: string,
+	data: Partial<typeof users.$inferInsert>,
+): Promise<User | undefined> {
+	const [user] = await db
+		.update(users)
+		.set({
+			...data,
+			updatedAt: new Date(),
+		})
+		.where(eq(users.id, id))
+		.returning();
+
+	return user;
+}
+
+export async function deleteUserById(id: string): Promise<User | undefined> {
+	const [user] = await db
+		.delete(users)
+		.where(eq(users.id, id))
+		.returning();
+
+	return user;
+}
