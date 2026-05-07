@@ -5,3 +5,9 @@ export const PlateAlreadyRegisteredError = createError(
 	"A placa desse veículo já foi registrada",
 	400,
 );
+
+export const VehicleNotFoundError = createError(
+	"VehicleNotFoundError",
+	"Veículo não encontrado",
+	404,
+);

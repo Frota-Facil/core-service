@@ -30,9 +30,41 @@ export async function findByPlate(plate: string): Promise<Vehicle | undefined> {
 	return vehicle;
 }
 
+export async function findById(id: string): Promise<Vehicle | undefined> {
+	const [vehicle] = await db
+		.select()
+		.from(vehicles)
+		.where(eq(vehicles.id, id))
+		.limit(1);
+
+	return vehicle;
+}
+
 export async function insertVehicle(
 	data: typeof vehicles.$inferInsert,
 ): Promise<Vehicle> {
 	const [vehicle] = await db.insert(vehicles).values(data).returning();
+	return vehicle;
+}
+
+export async function updateVehicle(
+	id: string,
+	data: typeof vehicles.$inferInsert,
+): Promise<Vehicle | undefined> {
+	const [vehicle] = await db
+		.update(vehicles)
+		.set(data)
+		.where(eq(vehicles.id, id))
+		.returning();
+
+	return vehicle;
+}
+
+export async function deleteVehicle(id: string): Promise<Vehicle | undefined> {
+	const [vehicle] = await db
+		.delete(vehicles)
+		.where(eq(vehicles.id, id))
+		.returning();
+
 	return vehicle;
 }
