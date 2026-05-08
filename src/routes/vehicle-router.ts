@@ -99,7 +99,7 @@ export async function vehicleRouter(app: FastifyInstance) {
 		async (request, reply) => {
 			await deleteVehicle(request.params.id, request.user.id);
 
-			return reply.status(204).send();
+			return reply.status(204).send(null);
 		},
 	);
 }
