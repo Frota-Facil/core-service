@@ -6,6 +6,9 @@ import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import { createRequestUseCase } from "@/use-cases/requests/create-request";
+import { requestIdParamSchema } from "@/contracts/requests/request-params-schema";
+import { approveRequestUseCase } from "@/use-cases/requests/approve-request";
+import { rejectRequestUseCase } from "@/use-cases/requests/reject-request";
 
 export async function requestRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().post(
@@ -23,6 +26,47 @@ export async function requestRouter(app: FastifyInstance) {
 			const createdRequest = await createRequestUseCase(request.body);
 
 			return reply.status(201).send(createdRequest);
+		},
+	);
+	
+	app.withTypeProvider<ZodTypeProvider>().put(
+		"/admin/requests/:requestId/approve",
+		{
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
+			schema: {
+				params: requestIdParamSchema,
+				response: {
+					200: requestResponseSchema,
+				},
+			},
+		},
+		async (request, reply) => {
+			const updatedRequest = await approveRequestUseCase(
+				request.params.requestId,
+				request.user.id,
+			);
+
+			return reply.status(200).send(updatedRequest);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().put(
+		"/admin/requests/:requestId/reject",
+		{
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
+			schema: {
+				params: requestIdParamSchema,
+				response: {
+					200: requestResponseSchema,
+				},
+			},
+		},
+		async (request, reply) => {
+			const updatedRequest = await rejectRequestUseCase(
+				request.params.requestId,
+			);
+
+			return reply.status(200).send(updatedRequest);
 		},
 	);
 }

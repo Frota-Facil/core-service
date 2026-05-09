@@ -17,3 +17,9 @@ export const InvalidRequestPeriodError = createError(
 	"A data final deve ser maior que a data inicial",
 	400,
 );
+
+export const RequestIsNotPendingError = createError(
+	"RequestIsNotPendingError",
+	"A solicitação não está pendente",
+	400,
+);
