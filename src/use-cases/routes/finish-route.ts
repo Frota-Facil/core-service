@@ -3,10 +3,7 @@ import {
 	type RouteResponseDTO,
 	routeResponseSchema,
 } from "@/contracts/routes/route-response-schema";
-import {
-	findRouteById,
-	updateRouteById,
-} from "@/domains/routes/db/repository";
+import { findRouteById, updateRouteById } from "@/domains/routes/db/repository";
 import {
 	RouteIsNotStartedError,
 	RouteNotFoundError,

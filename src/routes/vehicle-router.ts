@@ -1,17 +1,17 @@
-import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import { vehicleResponseSchema } from "@/contracts/vehicles/vehicle-response-schema";
+import { z } from "zod";
 import { vehicleRequestSchema } from "@/contracts/vehicles/register-vehicle-request-schema";
 import { vehicleParamsSchema } from "@/contracts/vehicles/vehicle-params-schema";
+import { vehicleResponseSchema } from "@/contracts/vehicles/vehicle-response-schema";
 import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
+import { deleteVehicle } from "@/use-cases/vehicles/delete-vehicle";
 import { fetchAvailableVehicles } from "@/use-cases/vehicles/fetch-available-vehicles";
 import { fetchVehicles } from "@/use-cases/vehicles/fetch-vehicles";
 import { registerVehicle } from "@/use-cases/vehicles/register-vehicle";
 import { updateVehicle } from "@/use-cases/vehicles/update-vehicle";
-import { deleteVehicle } from "@/use-cases/vehicles/delete-vehicle";
 
 export async function vehicleRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().get(

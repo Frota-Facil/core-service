@@ -51,11 +51,7 @@ export async function fetchUsers(): Promise<User[]> {
 	return foundUsers;
 }
 export async function findUserById(id: string): Promise<User | undefined> {
-	const [user] = await db
-		.select()
-		.from(users)
-		.where(eq(users.id, id))
-		.limit(1);
+	const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
 
 	return user;
 }
@@ -77,10 +73,7 @@ export async function updateUserById(
 }
 
 export async function deleteUserById(id: string): Promise<User | undefined> {
-	const [user] = await db
-		.delete(users)
-		.where(eq(users.id, id))
-		.returning();
+	const [user] = await db.delete(users).where(eq(users.id, id)).returning();
 
 	return user;
 }

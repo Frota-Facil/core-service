@@ -1,12 +1,16 @@
 import type { vehicleRequestDTO } from "@/contracts/vehicles/register-vehicle-request-schema";
 import type { vehicleResponseDTO } from "@/contracts/vehicles/vehicle-response-schema";
 import { vehicleResponseSchema } from "@/contracts/vehicles/vehicle-response-schema";
-import { findById, findByPlate, updateVehicle as updateVehicleRepository } from "@/domains/vehicles/db/repository";
+import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
+import {
+	findById,
+	findByPlate,
+	updateVehicle as updateVehicleRepository,
+} from "@/domains/vehicles/db/repository";
 import {
 	PlateAlreadyRegisteredError,
 	VehicleNotFoundError,
 } from "@/domains/vehicles/errors";
-import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 
 export async function updateVehicle(

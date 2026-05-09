@@ -1,18 +1,18 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
 import { createUserSchema } from "@/contracts/users/create-user-schema";
+import { updateUserSchema } from "@/contracts/users/update-user-schema";
+import { userIdParamSchema } from "@/contracts/users/user-id-param-schema";
 import { userResponseSchema } from "@/contracts/users/user-response-schema";
 import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import { createUserUseCase } from "@/use-cases/users/create-user";
-import { fetchUsersUseCase } from "@/use-cases/users/fetch-users";
-import { updateUserSchema } from "@/contracts/users/update-user-schema";
-import { userIdParamSchema } from "@/contracts/users/user-id-param-schema";
 import { deleteUserUseCase } from "@/use-cases/users/delete-user";
 import { fetchUserByIdUseCase } from "@/use-cases/users/fetch-user-by-id";
+import { fetchUsersUseCase } from "@/use-cases/users/fetch-users";
 import { updateUserUseCase } from "@/use-cases/users/update-user";
-import { z } from "zod";
 
 export async function userRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().post(
@@ -46,7 +46,7 @@ export async function userRouter(app: FastifyInstance) {
 			return reply.status(200).send(users);
 		},
 	);
-		app.withTypeProvider<ZodTypeProvider>().get(
+	app.withTypeProvider<ZodTypeProvider>().get(
 		"/admin/users/:id",
 		{
 			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],

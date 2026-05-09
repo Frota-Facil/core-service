@@ -1,6 +1,9 @@
-import { deleteVehicle as deleteVehicleRepository, findById } from "@/domains/vehicles/db/repository";
-import { VehicleNotFoundError } from "@/domains/vehicles/errors";
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
+import {
+	deleteVehicle as deleteVehicleRepository,
+	findById,
+} from "@/domains/vehicles/db/repository";
+import { VehicleNotFoundError } from "@/domains/vehicles/errors";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 
 export async function deleteVehicle(

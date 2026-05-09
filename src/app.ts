@@ -11,11 +11,11 @@ import { verifyJwt } from "@/hooks/verify-jwt";
 import jwtPlugin from "@/plugins/jwt";
 import rabbitPlugin from "@/plugins/rabbitmq";
 import { authRouter } from "@/routes/auth-router";
+import { requestRouter } from "@/routes/request-router";
+import { routeRouter } from "@/routes/route-router";
 import { uploadRouter } from "@/routes/upload-router";
 import { userRouter } from "@/routes/user-router";
 import { vehicleRouter } from "@/routes/vehicle-router";
-import { requestRouter } from "@/routes/request-router";
-import { routeRouter } from "@/routes/route-router";
 
 export const app = fastify({
 	logger: {
