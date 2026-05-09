@@ -48,3 +48,18 @@ export async function findVehicleScheduleConflict(params: {
 
 	return request;
 }
+export async function updateRequestById(
+	id: string,
+	data: Partial<typeof requests.$inferInsert>,
+): Promise<Request | undefined> {
+	const [request] = await db
+		.update(requests)
+		.set({
+			...data,
+			updatedAt: new Date(),
+		})
+		.where(eq(requests.id, id))
+		.returning();
+
+	return request;
+}
