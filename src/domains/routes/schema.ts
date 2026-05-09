@@ -18,6 +18,10 @@ export const routes = pgTable("routes", {
 
 	description: text("description"),
 
+	startedAt: timestamp("started_at"),
+
+	finishedAt: timestamp("finished_at"),
+
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 
 	updatedAt: timestamp("updated_at")

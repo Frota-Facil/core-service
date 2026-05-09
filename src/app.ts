@@ -14,6 +14,8 @@ import { authRouter } from "@/routes/auth-router";
 import { uploadRouter } from "@/routes/upload-router";
 import { userRouter } from "@/routes/user-router";
 import { vehicleRouter } from "@/routes/vehicle-router";
+import { requestRouter } from "@/routes/request-router";
+import { routeRouter } from "@/routes/route-router";
 
 export const app = fastify({
 	logger: {
@@ -41,6 +43,8 @@ app.register(userRouter);
 app.register(vehicleRouter);
 app.register(authRouter);
 app.register(uploadRouter);
+app.register(requestRouter);
+app.register(routeRouter);
 
 app.register(rabbitPlugin);
 
