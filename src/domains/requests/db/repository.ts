@@ -63,3 +63,54 @@ export async function updateRequestById(
 
 	return request;
 }
+
+export async function findActiveOrFutureRequestsByUserId(
+	userId: string,
+): Promise<Request[]> {
+	const foundRequests = await db
+		.select()
+		.from(requests)
+		.where(
+			and(
+				eq(requests.userId, userId),
+				gt(requests.predictedEndDate, new Date()),
+			),
+		);
+
+	return foundRequests;
+}
+
+export async function findRequestsByVehicleId(
+	vehicleId: string,
+): Promise<Request[]> {
+	const foundRequests = await db
+		.select()
+		.from(requests)
+		.where(eq(requests.vehicleId, vehicleId));
+
+	return foundRequests;
+}
+
+export async function findActiveOrFutureScheduleByVehicleId(
+	vehicleId: string,
+): Promise<
+	{
+		predictedStartDate: Date;
+		predictedEndDate: Date;
+	}[]
+> {
+	const foundSchedules = await db
+		.select({
+			predictedStartDate: requests.predictedStartDate,
+			predictedEndDate: requests.predictedEndDate,
+		})
+		.from(requests)
+		.where(
+			and(
+				eq(requests.vehicleId, vehicleId),
+				gt(requests.predictedEndDate, new Date()),
+			),
+		);
+
+	return foundSchedules;
+}
