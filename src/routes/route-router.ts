@@ -25,7 +25,7 @@ export async function routeRouter(app: FastifyInstance) {
 			},
 		},
 		async (request, reply) => {
-			const route = await startRouteUseCase(request.params.requestId);
+			const route = await startRouteUseCase(request.params.requestId,request.user.id,);
 
 			return reply.status(201).send(route);
 		},
@@ -47,6 +47,7 @@ export async function routeRouter(app: FastifyInstance) {
 			const route = await finishRouteUseCase(
 				request.params.routeId,
 				request.body,
+				request.user.id,
 			);
 
 			return reply.status(200).send(route);
