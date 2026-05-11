@@ -11,6 +11,8 @@ import {
 	RequestNotFoundError,
 } from "@/domains/requests/errors";
 import { REQUEST_STATUSES } from "@/domains/requests/status";
+import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
+import { createAuditLog } from "@/use-cases/audit-log-service";
 
 export async function approveRequestUseCase(
 	requestId: string,
@@ -34,6 +36,11 @@ export async function approveRequestUseCase(
 	if (!updatedRequest) {
 		throw new RequestNotFoundError();
 	}
+	await createAuditLog({
+	action: AUDIT_ACTIONS[7], // REQUEST.APPROVED
+	entityId: updatedRequest.id,
+	performedBy: approvedBy,
+	});
 
 	return requestResponseSchema.parse(updatedRequest);
 }

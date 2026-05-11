@@ -11,9 +11,12 @@ import {
 	RequestNotFoundError,
 } from "@/domains/requests/errors";
 import { REQUEST_STATUSES } from "@/domains/requests/status";
+import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
+import { createAuditLog } from "@/use-cases/audit-log-service";
 
 export async function rejectRequestUseCase(
 	requestId: string,
+	performedBy?: string,
 ): Promise<RequestResponseDTO> {
 	const request = await findRequestById(requestId);
 
@@ -32,6 +35,11 @@ export async function rejectRequestUseCase(
 	if (!updatedRequest) {
 		throw new RequestNotFoundError();
 	}
+	await createAuditLog({
+	action: AUDIT_ACTIONS[8], // REQUEST.REJECTED
+	entityId: updatedRequest.id,
+	performedBy,
+    });
 
 	return requestResponseSchema.parse(updatedRequest);
 }

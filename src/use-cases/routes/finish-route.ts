@@ -9,10 +9,13 @@ import {
 	RouteNotFoundError,
 } from "@/domains/routes/errors";
 import { ROUTES_STATUSES } from "@/domains/routes/status";
+import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
+import { createAuditLog } from "@/use-cases/audit-log-service";
 
 export async function finishRouteUseCase(
 	routeId: string,
 	input: FinishRouteDTO,
+	performedBy?: string,
 ): Promise<RouteResponseDTO> {
 	const route = await findRouteById(routeId);
 
@@ -33,6 +36,11 @@ export async function finishRouteUseCase(
 	if (!updatedRoute) {
 		throw new RouteNotFoundError();
 	}
+	await createAuditLog({
+	action: AUDIT_ACTIONS[10], // TRIP.FINISHED
+	entityId: updatedRoute.id,
+	performedBy,
+});
 
 	return routeResponseSchema.parse(updatedRoute);
 }

@@ -16,9 +16,12 @@ import { findUserById } from "@/domains/users/db/repository";
 import { UserNotFoundError } from "@/domains/users/errors";
 import { findById } from "@/domains/vehicles/db/repository";
 import { VehicleNotFoundError } from "@/domains/vehicles/errors";
+import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
+import { createAuditLog } from "@/use-cases/audit-log-service";
 
 export async function createRequestUseCase(
 	input: CreateRequestDTO,
+	performedBy?: string,
 ): Promise<RequestResponseDTO> {
 	if (input.predictedEndDate <= input.predictedStartDate) {
 		throw new InvalidRequestPeriodError();
@@ -53,6 +56,11 @@ export async function createRequestUseCase(
 		predictedStartDate: input.predictedStartDate,
 		predictedEndDate: input.predictedEndDate,
 		reason: input.reason,
+	});
+	await createAuditLog({
+	action: AUDIT_ACTIONS[6], // REQUEST.CREATED
+	entityId: request.id,
+	performedBy,
 	});
 
 	return requestResponseSchema.parse(request);

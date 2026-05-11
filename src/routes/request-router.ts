@@ -18,6 +18,7 @@ import { fetchVehicleRequestsUseCase } from "@/use-cases/requests/fetch-vehicle-
 import { fetchVehicleScheduleUseCase } from "@/use-cases/requests/fetch-vehicle-schedule";
 import { rejectRequestUseCase } from "@/use-cases/requests/reject-request";
 
+
 export async function requestRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().post(
 		"/requests",
@@ -31,7 +32,10 @@ export async function requestRouter(app: FastifyInstance) {
 			},
 		},
 		async (request, reply) => {
-			const createdRequest = await createRequestUseCase(request.body);
+			const createdRequest = await createRequestUseCase(
+				request.body,
+				request.user.id,
+			);
 
 			return reply.status(201).send(createdRequest);
 		},
@@ -130,9 +134,11 @@ export async function requestRouter(app: FastifyInstance) {
 		async (request, reply) => {
 			const updatedRequest = await rejectRequestUseCase(
 				request.params.requestId,
+				request.user.id,
 			);
 
 			return reply.status(200).send(updatedRequest);
 		},
 	);
+	
 }
