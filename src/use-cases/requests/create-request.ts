@@ -15,9 +15,13 @@ import { REQUEST_STATUSES } from "@/domains/requests/status";
 import { findUserById } from "@/domains/users/db/repository";
 import { UserNotFoundError } from "@/domains/users/errors";
 import { findById } from "@/domains/vehicles/db/repository";
-import { VehicleNotFoundError } from "@/domains/vehicles/errors";
+import {
+	VehicleNotAvailableError,
+	VehicleNotFoundError,
+} from "@/domains/vehicles/errors";
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
 import { createAuditLog } from "@/use-cases/audit-log-service";
+import { VEHICLE_STATUSES } from "@/domains/vehicles/status";
 
 export async function createRequestUseCase(
 	input: CreateRequestDTO,
@@ -37,6 +41,11 @@ export async function createRequestUseCase(
 
 	if (!vehicle) {
 		throw new VehicleNotFoundError();
+
+	}
+	
+	if (vehicle.status !== VEHICLE_STATUSES[0]) {
+		throw new VehicleNotAvailableError();
 	}
 
 	const conflict = await findVehicleScheduleConflict({
