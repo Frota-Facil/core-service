@@ -11,3 +11,8 @@ export const VehicleNotFoundError = createError(
 	"Veículo não encontrado",
 	404,
 );
+export const VehicleNotAvailableError = createError(
+	"VehicleNotAvailableError",
+	"Veículo não está disponível",
+	400,
+);

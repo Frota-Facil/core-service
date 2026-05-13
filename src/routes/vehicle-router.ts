@@ -50,6 +50,7 @@ export async function vehicleRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().get(
 		"/vehicles",
 		{
+			preHandler: [verifyJwt, authorize([USER_ROLES[0], USER_ROLES[1]])],
 			schema: {
 				response: {
 					200: vehicleResponseSchema.array(),

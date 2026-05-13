@@ -17,6 +17,7 @@ import { fetchUserRequestsUseCase } from "@/use-cases/requests/fetch-user-reques
 import { fetchVehicleRequestsUseCase } from "@/use-cases/requests/fetch-vehicle-requests";
 import { fetchVehicleScheduleUseCase } from "@/use-cases/requests/fetch-vehicle-schedule";
 import { rejectRequestUseCase } from "@/use-cases/requests/reject-request";
+import { fetchRequestsUseCase } from "@/use-cases/requests/fetch-requests";
 
 
 export async function requestRouter(app: FastifyInstance) {
@@ -138,6 +139,23 @@ export async function requestRouter(app: FastifyInstance) {
 			);
 
 			return reply.status(200).send(updatedRequest);
+		},
+	);
+	
+	app.withTypeProvider<ZodTypeProvider>().get(
+		"/admin/requests",
+		{
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
+			schema: {
+				response: {
+					200: requestResponseSchema.array(),
+				},
+			},
+		},
+		async (_, reply) => {
+			const requests = await fetchRequestsUseCase();
+
+			return reply.status(200).send(requests);
 		},
 	);
 	
