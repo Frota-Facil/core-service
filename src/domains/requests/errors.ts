@@ -23,3 +23,9 @@ export const RequestIsNotPendingError = createError(
 	"A solicitação não está pendente",
 	400,
 );
+
+export const RequestIsNotApprovedError = createError(
+	"RequestIsNotApprovedError",
+	"A solicitação ainda não foi aprovada",
+	400,
+);

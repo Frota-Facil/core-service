@@ -114,3 +114,8 @@ export async function findActiveOrFutureScheduleByVehicleId(
 
 	return foundSchedules;
 }
+export async function fetchRequests(): Promise<Request[]> {
+	const foundRequests = await db.select().from(requests);
+
+	return foundRequests;
+}

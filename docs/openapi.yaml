@@ -1,0 +1,1454 @@
+openapi: 3.0.3
+info:
+  title: SIF Core Service API
+  version: 1.0.0
+  description: |
+    Documento OpenAPI das rotas expostas pelo Core Service do SIF.
+
+    As rotas protegidas usam JWT no cabeçalho `Authorization: Bearer <token>`.
+    Os papéis aceitos por cada endpoint estão descritos em `x-roles`.
+servers:
+  - url: http://localhost:3333
+    description: Ambiente local de desenvolvimento
+tags:
+  - name: Auth
+    description: Autenticação e emissão de tokens JWT
+  - name: Admin
+    description: Rotas administrativas gerais
+  - name: Users
+    description: Gerenciamento administrativo de usuários
+  - name: Vehicles
+    description: Gerenciamento e consulta de veículos
+  - name: Requests
+    description: Solicitações de uso de veículos
+  - name: Routes
+    description: Início e finalização de rotas
+  - name: Uploads
+    description: Geração de URLs pré-assinadas para upload
+paths:
+  /auth:
+    post:
+      tags:
+        - Auth
+      summary: Autentica um usuário
+      operationId: authenticateUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRequest"
+            example:
+              cpf: "12345678901"
+              password: "senha123"
+      responses:
+        "200":
+          description: Token JWT emitido com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+              example:
+                token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Credenciais inválidas.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Credenciais inválidas"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /admin/auth:
+    post:
+      tags:
+        - Auth
+      summary: Autentica um administrador
+      operationId: authenticateAdmin
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRequest"
+            example:
+              cpf: "12345678901"
+              password: "senha123"
+      responses:
+        "200":
+          description: Token JWT administrativo emitido com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+              example:
+                token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Credenciais inválidas ou usuário sem permissão administrativa.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidCredentials:
+                  summary: Credenciais inválidas
+                  value:
+                    message: "Credenciais inválidas"
+                forbiddenRole:
+                  summary: Usuário não é administrador
+                  value:
+                    message: "Sem permissão"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /admin:
+    get:
+      tags:
+        - Admin
+      summary: Valida acesso administrativo
+      operationId: checkAdminAccess
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      responses:
+        "200":
+          description: Acesso administrativo confirmado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAccessResponse"
+              example:
+                message: "Área do admin"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /admin/users:
+    post:
+      tags:
+        - Users
+      summary: Cria um usuário
+      operationId: createUser
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+            example:
+              name: "Maria Silva"
+              email: "maria.silva@example.com"
+              password: "senha123"
+              cpf: "12345678901"
+              cnh: "12345678901"
+              phone: "85999998888"
+              department: "Operações"
+              role: "driver"
+      responses:
+        "201":
+          description: Usuário criado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Payload inválido, e-mail em uso ou CPF em uso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidPayload:
+                  summary: Payload inválido
+                  value:
+                    message: "body/cpf Too small: expected string to have >=11 characters"
+                emailInUse:
+                  summary: E-mail já cadastrado
+                  value:
+                    message: "E-mail já está em uso"
+                cpfInUse:
+                  summary: CPF já cadastrado
+                  value:
+                    message: "CPF já está em uso"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    get:
+      tags:
+        - Users
+      summary: Lista usuários
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      responses:
+        "200":
+          description: Lista de usuários.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /admin/users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Busca um usuário por ID
+      operationId: getUserById
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Usuário encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Usuário não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Usuário não encontrado"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      tags:
+        - Users
+      summary: Atualiza um usuário
+      operationId: updateUser
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+            example:
+              name: "Maria Souza"
+              phone: "85988887777"
+              department: "Logística"
+      responses:
+        "200":
+          description: Usuário atualizado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Payload inválido, e-mail em uso ou CPF em uso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Usuário não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Usuário não encontrado"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags:
+        - Users
+      summary: Remove um usuário
+      operationId: deleteUser
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "204":
+          description: Usuário removido com sucesso. Sem corpo de resposta.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Usuário não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Usuário não encontrado"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /admin/vehicles:
+    get:
+      tags:
+        - Vehicles
+      summary: Lista todos os veículos
+      operationId: listVehicles
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      responses:
+        "200":
+          description: Lista de veículos cadastrados.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags:
+        - Vehicles
+      summary: Cadastra um veículo
+      operationId: createVehicle
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleRequest"
+            example:
+              plate: "ABC1D23"
+              model: "Fiat Toro"
+              year: 2024
+              odometer: 12500
+              imageUrl: "https://cdn.example.com/vehicles/abc1d23.jpg"
+              status: "AVAILABLE"
+              type: "CAR"
+      responses:
+        "201":
+          description: Veículo cadastrado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "400":
+          description: Payload inválido ou placa já cadastrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidPayload:
+                  summary: Payload inválido
+                  value:
+                    message: "body/status Invalid option"
+                plateInUse:
+                  summary: Placa já cadastrada
+                  value:
+                    message: "A placa desse veículo já foi registrada"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /vehicles:
+    get:
+      tags:
+        - Vehicles
+      summary: Lista veículos disponíveis
+      operationId: listAvailableVehicles
+      security:
+        - bearerAuth: []
+      x-roles:
+        - driver
+        - admin
+      responses:
+        "200":
+          description: Lista de veículos disponíveis para solicitação.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /admin/vehicles/{id}:
+    put:
+      tags:
+        - Vehicles
+      summary: Atualiza um veículo
+      operationId: updateVehicle
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/VehicleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleRequest"
+            example:
+              plate: "ABC1D23"
+              model: "Fiat Toro"
+              year: 2024
+              odometer: 13000
+              imageUrl: null
+              status: "MAINTENANCE"
+              type: "CAR"
+      responses:
+        "200":
+          description: Veículo atualizado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "400":
+          description: Payload inválido ou placa já cadastrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Veículo não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Veículo não encontrado"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags:
+        - Vehicles
+      summary: Remove um veículo
+      operationId: deleteVehicle
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/VehicleId"
+      responses:
+        "204":
+          description: Veículo removido com sucesso. Sem corpo de resposta.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Veículo não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Veículo não encontrado"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /requests:
+    post:
+      tags:
+        - Requests
+      summary: Cria uma solicitação de veículo
+      operationId: createRequest
+      security:
+        - bearerAuth: []
+      x-roles:
+        - driver
+        - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRequestRequest"
+            example:
+              userId: "4c4f51f4-a1c2-4e29-b99a-7e3e92a4d401"
+              vehicleId: "fa9cc6d1-1984-48e0-8ab5-7a3a9cc64e10"
+              predictedStartDate: "2026-05-13T08:00:00.000Z"
+              predictedEndDate: "2026-05-13T17:00:00.000Z"
+              reason: "Visita técnica em unidade externa"
+      responses:
+        "201":
+          description: Solicitação criada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleUseRequest"
+        "400":
+          description: Payload inválido, período inválido, veículo indisponível ou conflito de agenda.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidPeriod:
+                  summary: Período inválido
+                  value:
+                    message: "A data final deve ser maior que a data inicial"
+                vehicleUnavailable:
+                  summary: Veículo indisponível
+                  value:
+                    message: "Veículo não está disponível"
+                scheduleConflict:
+                  summary: Conflito de agenda
+                  value:
+                    message: "Veículo já está agendado para esse período"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Usuário ou veículo não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                userNotFound:
+                  summary: Usuário não encontrado
+                  value:
+                    message: "Usuário não encontrado"
+                vehicleNotFound:
+                  summary: Veículo não encontrado
+                  value:
+                    message: "Veículo não encontrado"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /requests/{userId}:
+    get:
+      tags:
+        - Requests
+      summary: Lista solicitações de um usuário
+      operationId: listRequestsByUser
+      security:
+        - bearerAuth: []
+      x-roles:
+        - driver
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/UserIdAsUserId"
+      responses:
+        "200":
+          description: Lista de solicitações do usuário.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleUseRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /requests/{vehicleId}/schedule:
+    get:
+      tags:
+        - Requests
+      summary: Consulta agenda de um veículo
+      operationId: getVehicleSchedule
+      security:
+        - bearerAuth: []
+      x-roles:
+        - driver
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/VehicleIdAsVehicleId"
+      responses:
+        "200":
+          description: Intervalos agendados para o veículo.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RequestSchedule"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Veículo não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Veículo não encontrado"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /admin/requests:
+    get:
+      tags:
+        - Requests
+      summary: Lista todas as solicitações
+      operationId: listRequests
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      responses:
+        "200":
+          description: Lista completa de solicitações.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleUseRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /admin/requests/{vehicleId}:
+    get:
+      tags:
+        - Requests
+      summary: Lista solicitações de um veículo
+      operationId: listRequestsByVehicle
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/VehicleIdAsVehicleId"
+      responses:
+        "200":
+          description: Lista de solicitações associadas ao veículo.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleUseRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /admin/requests/{requestId}/approve:
+    put:
+      tags:
+        - Requests
+      summary: Aprova uma solicitação
+      operationId: approveRequest
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Solicitação aprovada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleUseRequest"
+        "400":
+          description: Solicitação não está pendente ou parâmetro inválido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "A solicitação não está pendente"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Solicitação não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Solicitação não encontrada"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /admin/requests/{requestId}/reject:
+    put:
+      tags:
+        - Requests
+      summary: Rejeita uma solicitação
+      operationId: rejectRequest
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Solicitação rejeitada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleUseRequest"
+        "400":
+          description: Solicitação não está pendente ou parâmetro inválido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "A solicitação não está pendente"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Solicitação não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Solicitação não encontrada"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /routes/{requestId}:
+    post:
+      tags:
+        - Routes
+      summary: Inicia uma rota a partir de uma solicitação
+      operationId: startRoute
+      security:
+        - bearerAuth: []
+      x-roles:
+        - driver
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "201":
+          description: Rota iniciada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Route"
+        "400":
+          description: Solicitação ainda não aprovada ou rota já iniciada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                requestNotApproved:
+                  summary: Solicitação não aprovada
+                  value:
+                    message: "A solicitação ainda não foi aprovada"
+                routeAlreadyStarted:
+                  summary: Rota já iniciada
+                  value:
+                    message: "Essa solicitação já possui uma rota iniciada"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Solicitação não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Solicitação não encontrada"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /routes/{routeId}:
+    put:
+      tags:
+        - Routes
+      summary: Finaliza uma rota
+      operationId: finishRoute
+      security:
+        - bearerAuth: []
+      x-roles:
+        - driver
+        - admin
+      parameters:
+        - $ref: "#/components/parameters/RouteId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinishRouteRequest"
+            example:
+              description: "Rota concluída sem ocorrências."
+      responses:
+        "200":
+          description: Rota finalizada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Route"
+        "400":
+          description: Payload inválido ou rota não está iniciada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "A rota ainda não foi iniciada ou já foi finalizada"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Rota não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Rota não encontrada"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /admin/upload/presigned:
+    post:
+      tags:
+        - Uploads
+      summary: Gera URL pré-assinada para upload
+      operationId: createPresignedUploadUrl
+      security:
+        - bearerAuth: []
+      x-roles:
+        - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadPresignedRequest"
+            example:
+              contentType: "image/jpeg"
+      responses:
+        "200":
+          description: URL pré-assinada gerada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadPresignedResponse"
+              example:
+                uploadUrl: "http://localhost:9000/sif/vehicles/6c07a3e2-604d-4ad1-b010-72d89c0bd101.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256..."
+                fileUrl: "http://localhost:9000/sif/vehicles/6c07a3e2-604d-4ad1-b010-72d89c0bd101.jpg"
+                key: "vehicles/6c07a3e2-604d-4ad1-b010-72d89c0bd101.jpg"
+        "400":
+          description: Tipo de arquivo inválido ou payload inválido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Invalid file type"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    UserId:
+      name: id
+      in: path
+      required: true
+      description: ID do usuário.
+      schema:
+        type: string
+        format: uuid
+    UserIdAsUserId:
+      name: userId
+      in: path
+      required: true
+      description: ID do usuário.
+      schema:
+        type: string
+        format: uuid
+    VehicleId:
+      name: id
+      in: path
+      required: true
+      description: ID do veículo.
+      schema:
+        type: string
+        format: uuid
+    VehicleIdAsVehicleId:
+      name: vehicleId
+      in: path
+      required: true
+      description: ID do veículo.
+      schema:
+        type: string
+        format: uuid
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      description: ID da solicitação.
+      schema:
+        type: string
+        format: uuid
+    RouteId:
+      name: routeId
+      in: path
+      required: true
+      description: ID da rota.
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Requisição inválida.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            message: "Payload inválido"
+    Unauthorized:
+      description: Token ausente, inválido ou expirado.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            invalidToken:
+              summary: Token inválido
+              value:
+                error: "Token inválido ou expirado"
+            unauthenticated:
+              summary: Não autenticado
+              value:
+                error: "Não autenticado"
+    Forbidden:
+      description: Usuário autenticado sem permissão para acessar a rota.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Sem permissão"
+    InternalServerError:
+      description: Erro interno do servidor.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            message: "Internal Server Error"
+  schemas:
+    AuthRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - cpf
+        - password
+      properties:
+        cpf:
+          type: string
+          minLength: 11
+          maxLength: 11
+          example: "12345678901"
+        password:
+          type: string
+          example: "senha123"
+    AuthResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          description: JWT assinado pela API.
+    AdminAccessResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "Área do admin"
+    CreateUserRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - email
+        - password
+        - cpf
+        - phone
+      properties:
+        name:
+          type: string
+          example: "Maria Silva"
+        email:
+          type: string
+          format: email
+          example: "maria.silva@example.com"
+        password:
+          type: string
+          example: "senha123"
+        cpf:
+          type: string
+          minLength: 11
+          maxLength: 11
+          example: "12345678901"
+        cnh:
+          type: string
+          minLength: 11
+          maxLength: 11
+          example: "12345678901"
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 14
+          example: "85999998888"
+        department:
+          type: string
+          example: "Operações"
+        role:
+          allOf:
+            - $ref: "#/components/schemas/UserRole"
+          default: "driver"
+    UpdateUserRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          example: "Maria Souza"
+        email:
+          type: string
+          format: email
+          example: "maria.souza@example.com"
+        password:
+          type: string
+          example: "novaSenha123"
+        cpf:
+          type: string
+          minLength: 11
+          maxLength: 11
+          example: "12345678901"
+        cnh:
+          type: string
+          minLength: 11
+          maxLength: 11
+          example: "12345678901"
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 14
+          example: "85988887777"
+        department:
+          type: string
+          example: "Logística"
+        role:
+          $ref: "#/components/schemas/UserRole"
+    User:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - email
+        - cpf
+        - phone
+        - role
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        cpf:
+          type: string
+        cnh:
+          type: string
+          nullable: true
+          minLength: 11
+          maxLength: 11
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 14
+        department:
+          type: string
+          nullable: true
+        role:
+          $ref: "#/components/schemas/UserRole"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UserRole:
+      type: string
+      enum:
+        - driver
+        - admin
+    VehicleRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - plate
+        - model
+        - year
+        - odometer
+        - imageUrl
+        - status
+        - type
+      properties:
+        plate:
+          type: string
+          example: "ABC1D23"
+        model:
+          type: string
+          example: "Fiat Toro"
+        year:
+          type: number
+          example: 2024
+        odometer:
+          type: number
+          example: 12500
+        imageUrl:
+          type: string
+          nullable: true
+          example: "https://cdn.example.com/vehicles/abc1d23.jpg"
+        status:
+          $ref: "#/components/schemas/VehicleStatus"
+        type:
+          $ref: "#/components/schemas/VehicleType"
+    Vehicle:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - plate
+        - model
+        - year
+        - odometer
+        - imageUrl
+        - status
+        - type
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        plate:
+          type: string
+        model:
+          type: string
+        year:
+          type: number
+        odometer:
+          type: number
+        imageUrl:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/VehicleStatus"
+        type:
+          $ref: "#/components/schemas/VehicleType"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    VehicleStatus:
+      type: string
+      enum:
+        - AVAILABLE
+        - IN_USE
+        - MAINTENANCE
+    VehicleType:
+      type: string
+      enum:
+        - CAR
+        - MOTORCYCLE
+        - TRUCK
+        - TRACTOR
+        - VAN
+    CreateRequestRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - userId
+        - vehicleId
+        - predictedStartDate
+        - predictedEndDate
+        - reason
+      properties:
+        userId:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        predictedStartDate:
+          type: string
+          format: date-time
+        predictedEndDate:
+          type: string
+          format: date-time
+          description: Deve ser maior que `predictedStartDate`.
+        reason:
+          type: string
+          minLength: 1
+          example: "Visita técnica em unidade externa"
+    VehicleUseRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - userId
+        - vehicleId
+        - status
+        - predictedStartDate
+        - predictedEndDate
+        - reason
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        approvedBy:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: "#/components/schemas/RequestStatus"
+        predictedStartDate:
+          type: string
+          format: date-time
+        predictedEndDate:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RequestStatus:
+      type: string
+      enum:
+        - PENDING
+        - APPROVED
+        - REJECTED
+        - COMPLETED
+    RequestSchedule:
+      type: object
+      additionalProperties: false
+      required:
+        - predictedStartDate
+        - predictedEndDate
+      properties:
+        predictedStartDate:
+          type: string
+          format: date-time
+        predictedEndDate:
+          type: string
+          format: date-time
+    FinishRouteRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - description
+      properties:
+        description:
+          type: string
+          minLength: 1
+          example: "Rota concluída sem ocorrências."
+    Route:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - requestId
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        requestId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/RouteStatus"
+        description:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RouteStatus:
+      type: string
+      enum:
+        - PENDING
+        - READY
+        - STARTED
+        - FINISHED
+    UploadPresignedRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - contentType
+      properties:
+        contentType:
+          type: string
+          enum:
+            - image/jpeg
+            - image/png
+            - image/webp
+          example: "image/jpeg"
+    UploadPresignedResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - uploadUrl
+        - fileUrl
+        - key
+      properties:
+        uploadUrl:
+          type: string
+          format: uri
+          description: URL temporária para envio do arquivo.
+        fileUrl:
+          type: string
+          format: uri
+          description: URL pública final do arquivo.
+        key:
+          type: string
+          example: "vehicles/6c07a3e2-604d-4ad1-b010-72d89c0bd101.jpg"
+    ErrorResponse:
+      type: object
+      description: |
+        Resposta de erro atual da API. Erros de domínio normalmente usam `message`;
+        hooks de autenticação/autorização usam `error`.
+      properties:
+        message:
+          type: string
+          example: "Payload inválido"
+        error:
+          type: string
+          example: "Token inválido ou expirado"
+      additionalProperties: true
