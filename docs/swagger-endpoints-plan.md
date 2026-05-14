@@ -1,3 +1,8 @@
+Everton Gean de Oliveira Pinheiro
+Sara Maria Alves de Lima
+Vitor Junior Silva Alves
+João Manoel Fontes Carneiro
+
 # Planejamento inicial de endpoints - Swagger/OpenAPI
 
 Este planejamento foi criado a partir da varredura das rotas em `src/routes`, dos contratos Zod em `src/contracts`, dos domínios em `src/domains` e dos casos de uso em `src/use-cases`.
