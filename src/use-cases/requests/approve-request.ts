@@ -36,6 +36,13 @@ export async function approveRequestUseCase(
 	if (!updatedRequest) {
 		throw new RequestNotFoundError();
 	}
+
+	// Buscar email do user desse request
+	// Buscar nome do veículo desse request
+	
+	// Dar o push na fila de mensagens para enviar email de notificação para o user
+
+
 	await createAuditLog({
 	action: AUDIT_ACTIONS[7], // REQUEST.APPROVED
 	entityId: updatedRequest.id,

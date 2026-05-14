@@ -57,6 +57,12 @@ export async function createRequestUseCase(
 		predictedEndDate: input.predictedEndDate,
 		reason: input.reason,
 	});
+
+	// Buscar lista de emails dos admins
+	// Buscar nome do user e nome do veículo
+
+	// Dar o push na fila de mensagens para enviar email de notificação para os admins
+
 	await createAuditLog({
 	action: AUDIT_ACTIONS[6], // REQUEST.CREATED
 	entityId: request.id,
