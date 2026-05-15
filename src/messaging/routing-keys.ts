@@ -1,3 +1,3 @@
 export const ROUTING_KEYS = {
-	SOLICITATION_CREATED: "solicitation.created",
+	NOTIFICATION_SOLICITATION_CREATED: "notification.solicitation.created",
 } as const;
