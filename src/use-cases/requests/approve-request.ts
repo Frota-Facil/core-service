@@ -2,6 +2,7 @@ import {
 	type RequestResponseDTO,
 	requestResponseSchema,
 } from "@/contracts/requests/request-response-schema";
+import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
 import {
 	findRequestById,
 	updateRequestById,
@@ -11,8 +12,8 @@ import {
 	RequestNotFoundError,
 } from "@/domains/requests/errors";
 import { REQUEST_STATUSES } from "@/domains/requests/status";
-import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
 import { createAuditLog } from "@/use-cases/audit-log-service";
+import { notifyDriverAboutRequestApproved } from "@/use-cases/notification-service";
 
 export async function approveRequestUseCase(
 	requestId: string,
@@ -37,10 +38,12 @@ export async function approveRequestUseCase(
 		throw new RequestNotFoundError();
 	}
 	await createAuditLog({
-	action: AUDIT_ACTIONS[7], // REQUEST.APPROVED
-	entityId: updatedRequest.id,
-	performedBy: approvedBy,
+		action: AUDIT_ACTIONS[7], // REQUEST.APPROVED
+		entityId: updatedRequest.id,
+		performedBy: approvedBy,
 	});
+
+	await notifyDriverAboutRequestApproved(updatedRequest.id);
 
 	return requestResponseSchema.parse(updatedRequest);
 }
