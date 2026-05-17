@@ -50,6 +50,16 @@ export async function fetchUsers(): Promise<User[]> {
 
 	return foundUsers;
 }
+
+export async function fetchAdminUsers(): Promise<User[]> {
+	const foundUsers = await db
+		.select()
+		.from(users)
+		.where(eq(users.role, USER_ROLES[1]));
+
+	return foundUsers;
+}
+
 export async function findUserById(id: string): Promise<User | undefined> {
 	const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
 

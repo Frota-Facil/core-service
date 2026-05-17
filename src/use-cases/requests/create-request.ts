@@ -3,6 +3,7 @@ import {
 	type RequestResponseDTO,
 	requestResponseSchema,
 } from "@/contracts/requests/request-response-schema";
+import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
 import {
 	findVehicleScheduleConflict,
 	insertRequest,
@@ -19,9 +20,9 @@ import {
 	VehicleNotAvailableError,
 	VehicleNotFoundError,
 } from "@/domains/vehicles/errors";
-import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
-import { createAuditLog } from "@/use-cases/audit-log-service";
 import { VEHICLE_STATUSES } from "@/domains/vehicles/status";
+import { createAuditLog } from "@/use-cases/audit-log-service";
+import { notifyAdminsAboutNewRequest } from "@/use-cases/notification-service";
 
 export async function createRequestUseCase(
 	input: CreateRequestDTO,
@@ -41,9 +42,8 @@ export async function createRequestUseCase(
 
 	if (!vehicle) {
 		throw new VehicleNotFoundError();
-
 	}
-	
+
 	if (vehicle.status !== VEHICLE_STATUSES[0]) {
 		throw new VehicleNotAvailableError();
 	}
@@ -73,10 +73,12 @@ export async function createRequestUseCase(
 	// Dar o push na fila de mensagens para enviar email de notificação para os admins
 
 	await createAuditLog({
-	action: AUDIT_ACTIONS[6], // REQUEST.CREATED
-	entityId: request.id,
-	performedBy,
+		action: AUDIT_ACTIONS[6], // REQUEST.CREATED
+		entityId: request.id,
+		performedBy,
 	});
+
+	await notifyAdminsAboutNewRequest(request.id);
 
 	return requestResponseSchema.parse(request);
 }
