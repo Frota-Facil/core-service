@@ -13,6 +13,7 @@ import rabbitPlugin from "@/plugins/rabbitmq";
 import { authRouter } from "@/routes/auth-router";
 import { requestRouter } from "@/routes/request-router";
 import { routeRouter } from "@/routes/route-router";
+import { trackRouter } from "@/routes/track-router";
 import { uploadRouter } from "@/routes/upload-router";
 import { userRouter } from "@/routes/user-router";
 import { vehicleRouter } from "@/routes/vehicle-router";
@@ -45,6 +46,7 @@ app.register(authRouter);
 app.register(uploadRouter);
 app.register(requestRouter);
 app.register(routeRouter);
+app.register(trackRouter);
 
 app.register(rabbitPlugin);
 
