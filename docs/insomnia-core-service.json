@@ -1,0 +1,523 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-05-18T00:00:00.000Z",
+  "__export_source": "codex",
+  "resources": [
+    {
+      "_id": "wrk_core_service_demo",
+      "parentId": null,
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "name": "SIF - Core Service Demo",
+      "description": "Colecao para executar o roteiro: auth, usuarios, veiculos, solicitacoes, rotas, tracks e finalizacao.",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "env_core_service_demo",
+      "parentId": "wrk_core_service_demo",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "name": "Local",
+      "data": {
+        "base_url": "http://localhost:3333",
+        "rabbitmq_management_url": "http://localhost:15672",
+        "rabbitmq_user": "admin",
+        "rabbitmq_password": "admin",
+        "mailhog_url": "http://localhost:8025",
+        "admin_cpf": "00000000000",
+        "admin_password": "123456",
+        "driver_name": "Driver Demo",
+        "driver_email": "driver.demo@sif.com",
+        "driver_cpf": "12345678901",
+        "driver_cnh": "12345678901",
+        "driver_phone": "11988887777",
+        "driver_password": "123456",
+        "vehicle_plate": "INS0M01",
+        "predicted_start_date": "2026-05-20T08:00:00.000Z",
+        "predicted_end_date": "2026-05-20T18:00:00.000Z"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url",
+          "rabbitmq_management_url",
+          "rabbitmq_user",
+          "rabbitmq_password",
+          "mailhog_url",
+          "admin_cpf",
+          "admin_password",
+          "driver_name",
+          "driver_email",
+          "driver_cpf",
+          "driver_cnh",
+          "driver_phone",
+          "driver_password",
+          "vehicle_plate",
+          "predicted_start_date",
+          "predicted_end_date"
+        ]
+      },
+      "color": "#2d7ff9",
+      "isPrivate": false,
+      "metaSortKey": 1779120000000,
+      "_type": "environment"
+    },
+    {
+      "_id": "fld_auth",
+      "parentId": "wrk_core_service_demo",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "name": "01 - Autenticacao",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 100,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_auth_admin",
+      "parentId": "fld_auth",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.base_url }}/admin/auth",
+      "name": "01 - Se autenticar com o admin",
+      "description": "Usa o admin criado pelo seed: CPF 00000000000, senha 123456.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"cpf\": \"{{ _.admin_cpf }}\",\n  \"password\": \"{{ _.admin_password }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 101,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_create_driver",
+      "parentId": "fld_auth",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.base_url }}/admin/users",
+      "name": "02 - Criar user driver",
+      "description": "Cria o motorista usando o token retornado no passo 01.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"{{ _.driver_name }}\",\n  \"email\": \"{{ _.driver_email }}\",\n  \"password\": \"{{ _.driver_password }}\",\n  \"cpf\": \"{{ _.driver_cpf }}\",\n  \"cnh\": \"{{ _.driver_cnh }}\",\n  \"phone\": \"{{ _.driver_phone }}\",\n  \"department\": \"Operacoes\",\n  \"role\": \"driver\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_auth_admin', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 102,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_auth_driver",
+      "parentId": "fld_auth",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.base_url }}/auth",
+      "name": "03 - Se autenticar com o driver",
+      "description": "Usa o CPF e senha configurados no ambiente e criados no passo 02.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"cpf\": \"{{ _.driver_cpf }}\",\n  \"password\": \"{{ _.driver_password }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 103,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_vehicles",
+      "parentId": "wrk_core_service_demo",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "name": "02 - Veiculos",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 200,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_create_vehicle",
+      "parentId": "fld_vehicles",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.base_url }}/admin/vehicles",
+      "name": "01 - Admin criar novo veiculo",
+      "description": "Cria um veiculo AVAILABLE para o motorista solicitar.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"plate\": \"{{ _.vehicle_plate }}\",\n  \"model\": \"Fiat Toro Insomnia\",\n  \"year\": 2026,\n  \"odometer\": 1200,\n  \"imageUrl\": null,\n  \"status\": \"AVAILABLE\",\n  \"type\": \"CAR\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_auth_admin', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 201,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_driver_list_vehicles",
+      "parentId": "fld_vehicles",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.base_url }}/vehicles",
+      "name": "02 - Driver listar os veiculos",
+      "description": "Lista veiculos disponiveis usando o token do driver.",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_auth_driver', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 202,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_requests",
+      "parentId": "wrk_core_service_demo",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "name": "03 - Solicitacoes",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 300,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_create_request",
+      "parentId": "fld_requests",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.base_url }}/requests",
+      "name": "01 - Driver solicitar veiculo",
+      "description": "Usa o id do driver criado no passo 01.02 e o id do veiculo criado no passo 02.01.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": \"{% response 'body', 'req_create_driver', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n  \"vehicleId\": \"{% response 'body', 'req_create_vehicle', 'b64::JC5pZA==::46b', 'never', 60 %}\",\n  \"predictedStartDate\": \"{{ _.predicted_start_date }}\",\n  \"predictedEndDate\": \"{{ _.predicted_end_date }}\",\n  \"reason\": \"Visita tecnica em unidade externa\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_auth_driver', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 301,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_mailhog_after_request",
+      "parentId": "fld_requests",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.mailhog_url }}/api/v2/messages",
+      "name": "02 - Mailhog: verificar email enviado ao admin",
+      "description": "Execute depois de criar a solicitacao. Tambem da para abrir {{ _.mailhog_url }} no navegador.",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": 302,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_admin_approve_request",
+      "parentId": "fld_requests",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.base_url }}/admin/requests/{% response 'body', 'req_create_request', 'b64::JC5pZA==::46b', 'never', 60 %}/approve",
+      "name": "03 - Admin aprovar solicitacao",
+      "description": "Aprova a solicitacao criada pelo driver.",
+      "method": "PUT",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_auth_admin', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 303,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_mailhog_after_approval",
+      "parentId": "fld_requests",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.mailhog_url }}/api/v2/messages",
+      "name": "04 - Mailhog: verificar email enviado ao driver",
+      "description": "Execute depois da aprovacao. O email deve ir para o motorista criado.",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": 304,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_routes_tracks",
+      "parentId": "wrk_core_service_demo",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "name": "04 - Rotas e tracks",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 400,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_start_route",
+      "parentId": "fld_routes_tracks",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.base_url }}/routes/{% response 'body', 'req_admin_approve_request', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "name": "01 - Driver iniciar uma rota",
+      "description": "Inicia rota usando o id da solicitacao aprovada.",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_auth_driver', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 401,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_publish_fake_track",
+      "parentId": "fld_routes_tracks",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.rabbitmq_management_url }}/api/exchanges/%2f/tracking/publish",
+      "name": "02 - Publicar track fake no RabbitMQ",
+      "description": "Simula o track-service publicando no exchange tracking com routing_key tracking.updated. O core-service consome a fila tracking.coordinates.updated.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"properties\": {},\n  \"routing_key\": \"tracking.updated\",\n  \"payload\": \"{\\\"routeId\\\":\\\"{% response 'body', 'req_start_route', 'b64::JC5pZA==::46b', 'never', 60 %}\\\",\\\"xCoordinate\\\":100,\\\"yCoordinate\\\":200,\\\"createdAt\\\":\\\"2026-05-20T13:00:00.000Z\\\"}\",\n  \"payload_encoding\": \"string\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "username": "{{ _.rabbitmq_user }}",
+        "password": "{{ _.rabbitmq_password }}",
+        "disabled": false
+      },
+      "metaSortKey": 402,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_admin_list_tracks",
+      "parentId": "fld_routes_tracks",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.base_url }}/admin/tracks/{% response 'body', 'req_start_route', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "name": "03 - Admin listar tracks da rota",
+      "description": "Lista as tracks persistidas pelo consumer RabbitMQ para a rota iniciada.",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_auth_admin', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 403,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_ai",
+      "parentId": "wrk_core_service_demo",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "name": "05 - AI",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 500,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_finish_route",
+      "parentId": "fld_ai",
+      "modified": 1779120000000,
+      "created": 1779120000000,
+      "url": "{{ _.base_url }}/routes/{% response 'body', 'req_start_route', 'b64::JC5pZA==::46b', 'never', 60 %}",
+      "name": "01 - Finalizar rota",
+      "description": "O core-service atualmente recebe o relatorio/descricao no campo description e retorna a rota finalizada.",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"description\": \"Relatorio gerado pela IA: rota finalizada sem ocorrencias criticas; comportamento dentro do esperado.\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_auth_driver', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 501,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    }
+  ]
+}
