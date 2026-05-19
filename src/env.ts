@@ -17,6 +17,8 @@ const envSchema = z.object({
 	MINIO_HOST: z.string().min(1),
 	MINIO_PORT: z.coerce.number().default(9000),
 	MINIO_BUCKET: z.string().min(1),
+
+	AI_REPORT_SERVICE_URL: z.string().url().default("http://ai-report-service:8001"),
 });
 
 export const env = envSchema.parse(process.env);
