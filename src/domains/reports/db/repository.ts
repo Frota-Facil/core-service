@@ -1,93 +1,67 @@
-import { and, gte, inArray, lte } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { requests } from "@/domains/requests/schema";
 import { routes } from "@/domains/routes/schema";
+import { tracks } from "@/domains/tracks/schema";
 import { users } from "@/domains/users/schema";
 import { vehicles } from "@/domains/vehicles/schema";
 import { db } from "@/drizzle/client";
 
-type FetchReportDataParams = {
-	startDate?: Date;
-	endDate?: Date;
-};
+export async function fetchRouteReportData(routeId: string) {
+	const [route] = await db
+		.select()
+		.from(routes)
+		.where(eq(routes.id, routeId))
+		.limit(1);
 
-function buildRequestPeriodFilter(params: FetchReportDataParams) {
-	if (params.startDate && params.endDate) {
-		return and(
-			lte(requests.predictedStartDate, params.endDate),
-			gte(requests.predictedEndDate, params.startDate),
-		);
+	if (!route) {
+		return null;
 	}
 
-	if (params.startDate) {
-		return gte(requests.predictedEndDate, params.startDate);
-	}
-
-	if (params.endDate) {
-		return lte(requests.predictedStartDate, params.endDate);
-	}
-
-	return undefined;
-}
-
-export async function fetchRawFleetReportData(params: FetchReportDataParams) {
-	const periodFilter = buildRequestPeriodFilter(params);
-
-	const foundRequests = await db
+	const [request] = await db
 		.select()
 		.from(requests)
-		.where(periodFilter);
+		.where(eq(requests.id, route.requestId))
+		.limit(1);
 
-	const userIds = [...new Set(foundRequests.map((request) => request.userId))];
+	const [user] = request
+		? await db
+				.select({
+					id: users.id,
+					name: users.name,
+					department: users.department,
+					role: users.role,
+				})
+				.from(users)
+				.where(eq(users.id, request.userId))
+				.limit(1)
+		: [];
 
-	const vehicleIds = [
-		...new Set(foundRequests.map((request) => request.vehicleId)),
-	];
+	const [vehicle] = request
+		? await db
+				.select({
+					id: vehicles.id,
+					plate: vehicles.plate,
+					model: vehicles.model,
+					year: vehicles.year,
+					odometer: vehicles.odometer,
+					status: vehicles.status,
+					type: vehicles.type,
+				})
+				.from(vehicles)
+				.where(eq(vehicles.id, request.vehicleId))
+				.limit(1)
+		: [];
 
-	const requestIds = [
-		...new Set(foundRequests.map((request) => request.id)),
-	];
-
-	const foundUsers =
-		userIds.length > 0
-			? await db
-					.select({
-						id: users.id,
-						name: users.name,
-						department: users.department,
-						role: users.role,
-					})
-					.from(users)
-					.where(inArray(users.id, userIds))
-			: [];
-
-	const foundVehicles =
-		vehicleIds.length > 0
-			? await db
-					.select({
-						id: vehicles.id,
-						plate: vehicles.plate,
-						model: vehicles.model,
-						year: vehicles.year,
-						odometer: vehicles.odometer,
-						status: vehicles.status,
-						type: vehicles.type,
-					})
-					.from(vehicles)
-					.where(inArray(vehicles.id, vehicleIds))
-			: [];
-
-	const foundRoutes =
-		requestIds.length > 0
-			? await db
-					.select()
-					.from(routes)
-					.where(inArray(routes.requestId, requestIds))
-			: [];
+	const foundTracks = await db
+		.select()
+		.from(tracks)
+		.where(eq(tracks.routeId, routeId));
 
 	return {
-		users: foundUsers,
-		vehicles: foundVehicles,
-		requests: foundRequests,
-		routes: foundRoutes,
+		route,
+		request,
+		user,
+		vehicle,
+		tracks: foundTracks,
 	};
 }
