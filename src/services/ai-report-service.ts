@@ -1,30 +1,21 @@
 import {
-	type GeneratedMarkdownReportResponseDTO,
-	generatedMarkdownReportResponseSchema,
-} from "@/contracts/reports/generate-fleet-report-schema";
+	type GeneratedRouteReportResponseDTO,
+	generatedRouteReportResponseSchema,
+} from "@/contracts/reports/generate-route-report-schema";
 import { env } from "@/env";
 
-type AiReportPayload = {
-	period?: {
-		start?: string;
-		end?: string;
-	};
-	users: {
+type AiRouteReportPayload = {
+	route: {
 		id: string;
-		name?: string | null;
-		department?: string | null;
-		role?: string | null;
-	}[];
-	vehicles: {
-		id: string;
-		plate?: string | null;
-		model?: string | null;
-		year?: number | null;
-		odometer?: number | null;
+		request_id: string;
 		status?: string | null;
-		type?: string | null;
-	}[];
-	requests: {
+		description?: string | null;
+		started_at?: string | null;
+		finished_at?: string | null;
+		created_at?: string | null;
+		updated_at?: string | null;
+	};
+	request?: {
 		id: string;
 		user_id?: string | null;
 		vehicle_id?: string | null;
@@ -35,14 +26,27 @@ type AiReportPayload = {
 		reason?: string | null;
 		created_at?: string | null;
 		updated_at?: string | null;
-	}[];
-	routes: {
+	};
+	vehicle?: {
 		id: string;
-		request_id: string;
+		plate?: string | null;
+		model?: string | null;
+		year?: number | null;
+		odometer?: number | null;
 		status?: string | null;
-		description?: string | null;
-		started_at?: string | null;
-		finished_at?: string | null;
+		type?: string | null;
+	};
+	user?: {
+		id: string;
+		name?: string | null;
+		department?: string | null;
+		role?: string | null;
+	};
+	tracks: {
+		id: string;
+		route_id: string;
+		x_coordinate: number;
+		y_coordinate: number;
 		created_at?: string | null;
 		updated_at?: string | null;
 	}[];
@@ -50,10 +54,10 @@ type AiReportPayload = {
 	metadata: Record<string, unknown>;
 };
 
-export async function requestFleetReportFromAiService(
-	payload: AiReportPayload,
-): Promise<GeneratedMarkdownReportResponseDTO> {
-	const response = await fetch(`${env.AI_REPORT_SERVICE_URL}/reports/fleet`, {
+export async function requestRouteReportFromAiService(
+	payload: AiRouteReportPayload,
+): Promise<GeneratedRouteReportResponseDTO> {
+	const response = await fetch(`${env.AI_REPORT_SERVICE_URL}/reports/routes`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -69,5 +73,5 @@ export async function requestFleetReportFromAiService(
 		);
 	}
 
-	return generatedMarkdownReportResponseSchema.parse(responseBody);
+	return generatedRouteReportResponseSchema.parse(responseBody);
 }

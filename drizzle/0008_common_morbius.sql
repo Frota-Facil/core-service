@@ -1,0 +1,1 @@
+ALTER TABLE "routes" ADD COLUMN "report_markdown" text;

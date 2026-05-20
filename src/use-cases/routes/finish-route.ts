@@ -3,14 +3,15 @@ import {
 	type RouteResponseDTO,
 	routeResponseSchema,
 } from "@/contracts/routes/route-response-schema";
+import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
 import { findRouteById, updateRouteById } from "@/domains/routes/db/repository";
 import {
 	RouteIsNotStartedError,
 	RouteNotFoundError,
 } from "@/domains/routes/errors";
 import { ROUTES_STATUSES } from "@/domains/routes/status";
-import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
 import { createAuditLog } from "@/use-cases/audit-log-service";
+import { generateRouteReportUseCase } from "@/use-cases/reports/generate-route-report";
 
 export async function finishRouteUseCase(
 	routeId: string,
@@ -36,11 +37,22 @@ export async function finishRouteUseCase(
 	if (!updatedRoute) {
 		throw new RouteNotFoundError();
 	}
-	await createAuditLog({
-	action: AUDIT_ACTIONS[10], // TRIP.FINISHED
-	entityId: updatedRoute.id,
-	performedBy,
-});
 
-	return routeResponseSchema.parse(updatedRoute);
+	const reportMarkdown = await generateRouteReportUseCase(routeId);
+
+	const routeWithReport = await updateRouteById(routeId, {
+		reportMarkdown,
+	});
+
+	if (!routeWithReport) {
+		throw new RouteNotFoundError();
+	}
+
+	await createAuditLog({
+		action: AUDIT_ACTIONS[10], // TRIP.FINISHED
+		entityId: routeWithReport.id,
+		performedBy,
+	});
+
+	return routeResponseSchema.parse(routeWithReport);
 }
