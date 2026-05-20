@@ -17,7 +17,8 @@ export async function vehicleRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().get(
 		"/admin/vehicles",
 		{
-			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],//Primeiro verifica se o token JWT é válido, Depois verifica se o usuário é admin
+
 			schema: {
 				response: {
 					200: vehicleResponseSchema.array(),
@@ -42,7 +43,8 @@ export async function vehicleRouter(app: FastifyInstance) {
 			},
 		},
 		async (request, reply) => {
-			const vehicle = await registerVehicle(request.body, request.user.id);
+			const vehicle = await registerVehicle(request.body, request.user.id);//request.body -> dados do veículo, request.user.id -> id do admin que está criando
+
 			return reply.status(201).send(vehicle);
 		},
 	);
