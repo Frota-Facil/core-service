@@ -17,3 +17,9 @@ export const RouteIsNotStartedError = createError(
 	"A rota ainda não foi iniciada ou já foi finalizada",
 	400,
 );
+
+export const RouteReportNotFoundError = createError(
+	"RouteReportNotFoundError",
+	"Relatório da rota ainda não foi gerado",
+	404,
+);

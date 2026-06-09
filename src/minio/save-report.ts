@@ -1,5 +1,5 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { env, MINIO_PUBLIC_URL } from "@/env";
+import { env, MINIO_ADMIN_URL } from "@/env";
 import { s3 } from "@/minio/client";
 
 type SaveMarkdownReportInput = {
@@ -35,6 +35,6 @@ export async function saveMarkdownReportToMinio({
 	return {
 		bucket: env.MINIO_BUCKET,
 		objectName,
-		fileUrl: `${MINIO_PUBLIC_URL}/${env.MINIO_BUCKET}/${objectName}`,
+		fileUrl: `${MINIO_ADMIN_URL}/${env.MINIO_BUCKET}/${objectName}`,
 	};
 }

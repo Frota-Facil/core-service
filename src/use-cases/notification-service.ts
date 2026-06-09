@@ -15,7 +15,6 @@ type SolicitationNotificationStatus = "pending" | "approved" | "rejected";
 type SolicitationNotificationPayload = {
 	recipients: string[];
 	subject: string;
-	message: string;
 	data: {
 		requestId: string;
 		userId: string;
@@ -157,7 +156,6 @@ function buildNewRequestAdminPayload(
 	return {
 		recipients,
 		subject: "Nova solicitação de veículo",
-		message: `Uma nova solicitação de veículo foi criada. Motorista: ${data.userName}. Veículo: ${data.vehicleName}. Placa: ${data.vehiclePlate}. Motivo: ${data.reason}. Início: ${data.startsAt}. Fim: ${data.endsAt}.`,
 		data,
 	};
 }
@@ -172,7 +170,6 @@ function buildDriverStatusPayload(
 	return {
 		recipients: [context.driver.email],
 		subject: `Sua solicitação de veículo foi ${statusLabel}`,
-		message: `Sua solicitação de veículo foi ${statusLabel}. Veículo: ${data.vehicleName}. Placa: ${data.vehiclePlate}. Motivo: ${data.reason}. Início: ${data.startsAt}. Fim: ${data.endsAt}.`,
 		data,
 	};
 }

@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { env, MINIO_PUBLIC_URL } from "@/env";
-import { s3 } from "@/minio/client";
+import { env, MINIO_ADMIN_URL } from "@/env";
+import { s3Admin } from "@/minio/client";
 
 function getExtension(contentType: string) {
 	switch (contentType) {
@@ -37,11 +37,11 @@ export async function generateUploadUrl({
 		ContentType: contentType,
 	});
 
-	const uploadUrl = await getSignedUrl(s3, command, {
+	const uploadUrl = await getSignedUrl(s3Admin, command, {
 		expiresIn: 60 * 5,
 	});
 
-	const fileUrl = `${MINIO_PUBLIC_URL}/${env.MINIO_BUCKET}/${key}`;
+	const fileUrl = `${MINIO_ADMIN_URL}/${env.MINIO_BUCKET}/${key}`;
 
 	return {
 		uploadUrl,

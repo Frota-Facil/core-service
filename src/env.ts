@@ -15,10 +15,14 @@ const envSchema = z.object({
 	MINIO_ROOT_USER: z.string().min(1),
 	MINIO_ROOT_PASSWORD: z.string().min(1),
 	MINIO_HOST: z.string().min(1),
+	MINIO_ADMIN_HOST: z.string().min(1).default("localhost"),
 	MINIO_PORT: z.coerce.number().default(9000),
 	MINIO_BUCKET: z.string().min(1),
 
-	AI_REPORT_SERVICE_URL: z.string().url().default("http://ai-report-service:8001"),
+	AI_REPORT_SERVICE_URL: z
+		.string()
+		.url()
+		.default("http://ai-report-service:8001"),
 });
 
 export const env = envSchema.parse(process.env);
@@ -29,4 +33,4 @@ export const RABBITMQ_AMQP_URL = `amqp://${env.RABBITMQ_DEFAULT_USER}:${env.RABB
 
 export const MINIO_URL = `http://${env.MINIO_HOST}:${env.MINIO_PORT}`;
 
-export const MINIO_PUBLIC_URL = `http://localhost:${env.MINIO_PORT}`;
+export const MINIO_ADMIN_URL = `http://${env.MINIO_ADMIN_HOST}:${env.MINIO_PORT}`;

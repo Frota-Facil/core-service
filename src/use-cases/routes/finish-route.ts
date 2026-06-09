@@ -13,11 +13,21 @@ import { ROUTES_STATUSES } from "@/domains/routes/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { generateRouteReportUseCase } from "@/use-cases/reports/generate-route-report";
 
+type FinishRouteResponseDTO = Omit<RouteResponseDTO, "reportMarkdown">;
+
+async function generateAndSaveRouteReport(routeId: string) {
+	const reportMarkdown = await generateRouteReportUseCase(routeId);
+
+	await updateRouteById(routeId, {
+		reportMarkdown,
+	});
+}
+
 export async function finishRouteUseCase(
 	routeId: string,
 	input: FinishRouteDTO,
 	performedBy?: string,
-): Promise<RouteResponseDTO> {
+): Promise<FinishRouteResponseDTO> {
 	const route = await findRouteById(routeId);
 
 	if (!route) {
@@ -38,21 +48,18 @@ export async function finishRouteUseCase(
 		throw new RouteNotFoundError();
 	}
 
-	const reportMarkdown = await generateRouteReportUseCase(routeId);
-
-	const routeWithReport = await updateRouteById(routeId, {
-		reportMarkdown,
+	void generateAndSaveRouteReport(routeId).catch((error) => {
+		console.error(`Erro ao gerar relatório da rota ${routeId}`, error);
 	});
-
-	if (!routeWithReport) {
-		throw new RouteNotFoundError();
-	}
 
 	await createAuditLog({
 		action: AUDIT_ACTIONS[10], // TRIP.FINISHED
-		entityId: routeWithReport.id,
+		entityId: updatedRoute.id,
 		performedBy,
 	});
 
-	return routeResponseSchema.parse(routeWithReport);
+	const routeResponse = routeResponseSchema.parse(updatedRoute);
+	delete routeResponse.reportMarkdown;
+
+	return routeResponse;
 }
