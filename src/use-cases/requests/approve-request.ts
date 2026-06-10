@@ -14,6 +14,7 @@ import {
 import { REQUEST_STATUSES } from "@/domains/requests/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { notifyDriverAboutRequestApproved } from "@/use-cases/notification-service";
+import { createRequestApprovedNotificationUseCase } from "@/use-cases/notifications/create-request-notification";
 
 export async function approveRequestUseCase(
 	requestId: string,
@@ -38,17 +39,13 @@ export async function approveRequestUseCase(
 		throw new RequestNotFoundError();
 	}
 
-	// Buscar email do user desse request
-	// Buscar nome do veículo desse request
-	
-	// Dar o push na fila de mensagens para enviar email de notificação para o user
-
-
 	await createAuditLog({
 		action: AUDIT_ACTIONS[7], // REQUEST.APPROVED
 		entityId: updatedRequest.id,
 		performedBy: approvedBy,
 	});
+
+	await createRequestApprovedNotificationUseCase(updatedRequest.id);
 
 	await notifyDriverAboutRequestApproved(updatedRequest.id);
 
