@@ -6,6 +6,7 @@ export const routeResponseSchema = z.object({
 	requestId: z.uuid(),
 	status: z.enum(ROUTES_STATUSES),
 	description: z.string().nullish(),
+	reportMarkdown: z.string().nullish(),
 	startedAt: z.date().nullish(),
 	finishedAt: z.date().nullish(),
 	createdAt: z.date(),

@@ -1,7 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { authResponseSchema } from "@/contracts/auth-response-schema";
-import { userLoginSchema } from "@/contracts/users/user-login-schema";
+import {
+	adminLoginSchema,
+	userLoginSchema,
+} from "@/contracts/users/user-login-schema";
 import { makeFastifyJwtService } from "@/plugins/fastify-jwt-service";
 import { authenticate } from "@/use-cases/authenticate";
 import { authenticateAdmin } from "@/use-cases/authenticate-admin";
@@ -19,9 +22,9 @@ export async function authRouter(app: FastifyInstance) {
 		},
 		async (request, reply) => {
 			const tokenService = makeFastifyJwtService(app);
-			const token = await authenticate(request.body, tokenService);
+			const authResponse = await authenticate(request.body, tokenService);
 
-			return reply.send({ token });
+			return reply.send(authResponse);
 		},
 	);
 
@@ -29,7 +32,7 @@ export async function authRouter(app: FastifyInstance) {
 		"/admin/auth",
 		{
 			schema: {
-				body: userLoginSchema,
+				body: adminLoginSchema,
 				response: {
 					200: authResponseSchema,
 				},
@@ -37,9 +40,9 @@ export async function authRouter(app: FastifyInstance) {
 		},
 		async (request, reply) => {
 			const tokenService = makeFastifyJwtService(app);
-			const token = await authenticateAdmin(request.body, tokenService);
+			const authResponse = await authenticateAdmin(request.body, tokenService);
 
-			return reply.send({ token });
+			return reply.send(authResponse);
 		},
 	);
 }

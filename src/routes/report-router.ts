@@ -1,8 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import {
+	fleetReportResponseSchema,
 	generateFleetReportSchema,
-	savedFleetReportResponseSchema,
 } from "@/contracts/reports/generate-fleet-report-schema";
 import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
@@ -17,7 +17,7 @@ export async function reportRouter(app: FastifyInstance) {
 			schema: {
 				body: generateFleetReportSchema,
 				response: {
-					200: savedFleetReportResponseSchema,
+					200: fleetReportResponseSchema,
 				},
 			},
 		},
