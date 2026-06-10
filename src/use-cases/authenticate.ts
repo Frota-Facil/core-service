@@ -1,16 +1,17 @@
 import bcrypt from "bcryptjs";
 import type { UserLoginDTO } from "@/contracts/users/user-login-schema";
-import { findUserByCpf } from "@/domains/users/db/repository";
+import { findUserByEmailAndRole } from "@/domains/users/db/repository";
 import { InvalidCredentialsError } from "@/domains/users/errors";
+import { USER_ROLES } from "@/domains/users/roles";
 import type { TokenService } from "./token-service";
 
 export async function authenticate(
 	input: UserLoginDTO,
 	tokenService: TokenService,
 ) {
-	const { cpf, password } = input;
+	const { email, password } = input;
 
-	const foundUser = await findUserByCpf(cpf);
+	const foundUser = await findUserByEmailAndRole(email, USER_ROLES[0]);
 
 	if (!foundUser) throw new InvalidCredentialsError();
 
@@ -23,9 +24,16 @@ export async function authenticate(
 
 	const token = tokenService.sign({
 		id: foundUser.id,
-		cpf: foundUser.cpf,
 		role: foundUser.role,
 	});
 
-	return token;
+	return {
+		token,
+		user: {
+			id: foundUser.id,
+			name: foundUser.name,
+			email: foundUser.email,
+			role: foundUser.role,
+		},
+	};
 }

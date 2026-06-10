@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { User } from "@/domains/users/schema";
 import { users } from "@/domains/users/schema";
 import { db } from "@/drizzle/client";
-import { USER_ROLES } from "../roles";
+import { USER_ROLES, type UserRoles } from "../roles";
 
 export async function findUserByEmail(
 	email: string,
@@ -11,6 +11,19 @@ export async function findUserByEmail(
 		.select()
 		.from(users)
 		.where(eq(users.email, email))
+		.limit(1);
+
+	return user;
+}
+
+export async function findUserByEmailAndRole(
+	email: string,
+	role: UserRoles,
+): Promise<User | undefined> {
+	const [user] = await db
+		.select()
+		.from(users)
+		.where(and(eq(users.email, email), eq(users.role, role)))
 		.limit(1);
 
 	return user;

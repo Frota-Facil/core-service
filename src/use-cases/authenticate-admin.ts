@@ -1,11 +1,11 @@
 import bcrypt from "bcryptjs";
-import type { UserLoginDTO } from "@/contracts/users/user-login-schema";
+import type { AdminLoginDTO } from "@/contracts/users/user-login-schema";
 import { findUserAdminByCpf } from "@/domains/users/db/repository";
 import { InvalidCredentialsError } from "@/domains/users/errors";
 import type { TokenService } from "./token-service";
 
 export async function authenticateAdmin(
-	input: UserLoginDTO,
+	input: AdminLoginDTO,
 	tokenService: TokenService,
 ) {
 	const { cpf, password } = input;
@@ -23,9 +23,16 @@ export async function authenticateAdmin(
 
 	const token = tokenService.sign({
 		id: foundUser.id,
-		cpf: foundUser.cpf,
 		role: foundUser.role,
 	});
 
-	return token;
+	return {
+		token,
+		user: {
+			id: foundUser.id,
+			name: foundUser.name,
+			email: foundUser.email,
+			role: foundUser.role,
+		},
+	};
 }
