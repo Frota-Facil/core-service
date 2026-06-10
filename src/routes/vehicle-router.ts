@@ -8,7 +8,6 @@ import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import { deleteVehicle } from "@/use-cases/vehicles/delete-vehicle";
-import { fetchAvailableVehicles } from "@/use-cases/vehicles/fetch-available-vehicles";
 import { fetchVehicles } from "@/use-cases/vehicles/fetch-vehicles";
 import { registerVehicle } from "@/use-cases/vehicles/register-vehicle";
 import { updateVehicle } from "@/use-cases/vehicles/update-vehicle";
@@ -17,7 +16,7 @@ export async function vehicleRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().get(
 		"/admin/vehicles",
 		{
-			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],//Primeiro verifica se o token JWT é válido, Depois verifica se o usuário é admin
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])], //Primeiro verifica se o token JWT é válido, Depois verifica se o usuário é admin
 
 			schema: {
 				response: {
@@ -43,7 +42,7 @@ export async function vehicleRouter(app: FastifyInstance) {
 			},
 		},
 		async (request, reply) => {
-			const vehicle = await registerVehicle(request.body, request.user.id);//request.body -> dados do veículo, request.user.id -> id do admin que está criando
+			const vehicle = await registerVehicle(request.body, request.user.id); //request.body -> dados do veículo, request.user.id -> id do admin que está criando
 
 			return reply.status(201).send(vehicle);
 		},
@@ -60,7 +59,7 @@ export async function vehicleRouter(app: FastifyInstance) {
 			},
 		},
 		async (_, reply) => {
-			const vehicles = await fetchAvailableVehicles();
+			const vehicles = await fetchVehicles();
 			return reply.status(200).send(vehicles);
 		},
 	);
