@@ -14,6 +14,7 @@ import {
 import { REQUEST_STATUSES } from "@/domains/requests/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { notifyDriverAboutRequestRejected } from "@/use-cases/notification-service";
+import { createRequestRejectedNotificationUseCase } from "@/use-cases/notifications/create-request-notification";
 
 export async function rejectRequestUseCase(
 	requestId: string,
@@ -37,17 +38,12 @@ export async function rejectRequestUseCase(
 		throw new RequestNotFoundError();
 	}
 
-
-	// Buscar email do user desse request
-	// Buscar nome do veículo desse request
-	
-	// Dar o push na fila de mensagens para enviar email de notificação para o user
-	
 	await createAuditLog({
 		action: AUDIT_ACTIONS[8], // REQUEST.REJECTED
 		entityId: updatedRequest.id,
 		performedBy,
 	});
+	await createRequestRejectedNotificationUseCase(updatedRequest.id);
 
 	await notifyDriverAboutRequestRejected(updatedRequest.id);
 

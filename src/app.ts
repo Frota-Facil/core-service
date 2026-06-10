@@ -18,6 +18,7 @@ import { uploadRouter } from "@/routes/upload-router";
 import { userRouter } from "@/routes/user-router";
 import { vehicleRouter } from "@/routes/vehicle-router";
 import { reportRouter } from "@/routes/report-router";
+import { notificationRouter } from "@/routes/notification-router";
 
 export const app = fastify({
 	logger: {
@@ -48,6 +49,7 @@ app.register(uploadRouter);
 app.register(requestRouter);
 app.register(routeRouter);
 app.register(trackRouter);
+app.register(notificationRouter);
 
 app.register(reportRouter);
 
