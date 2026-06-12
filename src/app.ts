@@ -11,14 +11,15 @@ import { verifyJwt } from "@/hooks/verify-jwt";
 import jwtPlugin from "@/plugins/jwt";
 import rabbitPlugin from "@/plugins/rabbitmq";
 import { authRouter } from "@/routes/auth-router";
+import { notificationRouter } from "@/routes/notification-router";
+import { pushTokenRouter } from "@/routes/push-token-router";
+import { reportRouter } from "@/routes/report-router";
 import { requestRouter } from "@/routes/request-router";
 import { routeRouter } from "@/routes/route-router";
 import { trackRouter } from "@/routes/track-router";
 import { uploadRouter } from "@/routes/upload-router";
 import { userRouter } from "@/routes/user-router";
 import { vehicleRouter } from "@/routes/vehicle-router";
-import { reportRouter } from "@/routes/report-router";
-import { notificationRouter } from "@/routes/notification-router";
 
 export const app = fastify({
 	logger: {
@@ -50,6 +51,7 @@ app.register(requestRouter);
 app.register(routeRouter);
 app.register(trackRouter);
 app.register(notificationRouter);
+app.register(pushTokenRouter);
 
 app.register(reportRouter);
 
