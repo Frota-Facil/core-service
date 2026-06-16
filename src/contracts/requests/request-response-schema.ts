@@ -15,3 +15,18 @@ export const requestResponseSchema = z.object({
 });
 
 export type RequestResponseDTO = z.infer<typeof requestResponseSchema>;
+
+export const requestWithRelationsResponseSchema = requestResponseSchema.extend({
+	user: z.object({
+		id: z.uuid(),
+		name: z.string(),
+	}),
+	vehicle: z.object({
+		id: z.uuid(),
+		model: z.string(),
+	}),
+});
+
+export type RequestWithRelationsResponseDTO = z.infer<
+	typeof requestWithRelationsResponseSchema
+>;

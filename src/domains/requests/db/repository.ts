@@ -1,9 +1,43 @@
 import { and, eq, gt, inArray, lt } from "drizzle-orm";
 import { requests } from "@/domains/requests/schema";
 import { REQUEST_STATUSES } from "@/domains/requests/status";
+import { users } from "@/domains/users/schema";
+import { vehicles } from "@/domains/vehicles/schema";
 import { db } from "@/drizzle/client";
 
 export type Request = typeof requests.$inferSelect;
+
+export type RequestWithRelations = Request & {
+	user: {
+		id: string;
+		name: string;
+	};
+	vehicle: {
+		id: string;
+		model: string;
+	};
+};
+
+const requestWithRelationsColumns = {
+	id: requests.id,
+	userId: requests.userId,
+	vehicleId: requests.vehicleId,
+	approvedBy: requests.approvedBy,
+	status: requests.status,
+	predictedStartDate: requests.predictedStartDate,
+	predictedEndDate: requests.predictedEndDate,
+	reason: requests.reason,
+	createdAt: requests.createdAt,
+	updatedAt: requests.updatedAt,
+	user: {
+		id: users.id,
+		name: users.name,
+	},
+	vehicle: {
+		id: vehicles.id,
+		model: vehicles.model,
+	},
+};
 
 export async function insertRequest(
 	data: typeof requests.$inferInsert,
@@ -82,11 +116,24 @@ export async function findActiveOrFutureRequestsByUserId(
 
 export async function findRequestsByVehicleId(
 	vehicleId: string,
-): Promise<Request[]> {
+): Promise<RequestWithRelations[]> {
 	const foundRequests = await db
-		.select()
+		.select(requestWithRelationsColumns)
 		.from(requests)
+		.innerJoin(users, eq(requests.userId, users.id))
+		.innerJoin(vehicles, eq(requests.vehicleId, vehicles.id))
 		.where(eq(requests.vehicleId, vehicleId));
+
+	return foundRequests;
+}
+
+export async function findPendingRequests(): Promise<RequestWithRelations[]> {
+	const foundRequests = await db
+		.select(requestWithRelationsColumns)
+		.from(requests)
+		.innerJoin(users, eq(requests.userId, users.id))
+		.innerJoin(vehicles, eq(requests.vehicleId, vehicles.id))
+		.where(eq(requests.status, REQUEST_STATUSES[0]));
 
 	return foundRequests;
 }

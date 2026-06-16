@@ -6,19 +6,22 @@ import {
 	requestUserIdParamSchema,
 	requestVehicleIdParamSchema,
 } from "@/contracts/requests/request-params-schema";
-import { requestResponseSchema } from "@/contracts/requests/request-response-schema";
+import {
+	requestResponseSchema,
+	requestWithRelationsResponseSchema,
+} from "@/contracts/requests/request-response-schema";
 import { requestScheduleResponseSchema } from "@/contracts/requests/request-schedule-response-schema";
 import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import { approveRequestUseCase } from "@/use-cases/requests/approve-request";
 import { createRequestUseCase } from "@/use-cases/requests/create-request";
+import { fetchPendingRequestsUseCase } from "@/use-cases/requests/fetch-pending-requests";
+import { fetchRequestsUseCase } from "@/use-cases/requests/fetch-requests";
 import { fetchUserRequestsUseCase } from "@/use-cases/requests/fetch-user-requests";
 import { fetchVehicleRequestsUseCase } from "@/use-cases/requests/fetch-vehicle-requests";
 import { fetchVehicleScheduleUseCase } from "@/use-cases/requests/fetch-vehicle-schedule";
 import { rejectRequestUseCase } from "@/use-cases/requests/reject-request";
-import { fetchRequestsUseCase } from "@/use-cases/requests/fetch-requests";
-
 
 export async function requestRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().post(
@@ -61,13 +64,30 @@ export async function requestRouter(app: FastifyInstance) {
 	);
 
 	app.withTypeProvider<ZodTypeProvider>().get(
+		"/admin/requests/pending",
+		{
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
+			schema: {
+				response: {
+					200: requestWithRelationsResponseSchema.array(),
+				},
+			},
+		},
+		async (_, reply) => {
+			const requests = await fetchPendingRequestsUseCase();
+
+			return reply.status(200).send(requests);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().get(
 		"/admin/requests/:vehicleId",
 		{
 			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
 			schema: {
 				params: requestVehicleIdParamSchema,
 				response: {
-					200: requestResponseSchema.array(),
+					200: requestWithRelationsResponseSchema.array(),
 				},
 			},
 		},
@@ -141,7 +161,7 @@ export async function requestRouter(app: FastifyInstance) {
 			return reply.status(200).send(updatedRequest);
 		},
 	);
-	
+
 	app.withTypeProvider<ZodTypeProvider>().get(
 		"/admin/requests",
 		{
@@ -158,5 +178,4 @@ export async function requestRouter(app: FastifyInstance) {
 			return reply.status(200).send(requests);
 		},
 	);
-	
 }
