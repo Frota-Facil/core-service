@@ -34,6 +34,8 @@ export const requests = pgTable("requests", {
 
 	predictedEndDate: timestamp("predicted_end_date").notNull(),
 
+	destination: text("destination").notNull(),
+
 	reason: text("reason").notNull(),
 
 	createdAt: timestamp("created_at").defaultNow().notNull(),

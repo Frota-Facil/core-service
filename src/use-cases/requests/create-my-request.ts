@@ -1,8 +1,8 @@
-import type { CreateRequestDTO } from "@/contracts/requests/create-request-schema";
+import type { CreateMyRequestDTO } from "@/contracts/requests/create-my-request-schema";
 import {
-	type RequestResponseDTO,
-	requestResponseSchema,
-} from "@/contracts/requests/request-response-schema";
+	type MyRequestResponseDTO,
+	myRequestResponseSchema,
+} from "@/contracts/requests/my-request-response-schema";
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
 import {
 	findVehicleScheduleConflict,
@@ -24,15 +24,15 @@ import { VEHICLE_STATUSES } from "@/domains/vehicles/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { notifyAdminsAboutNewRequest } from "@/use-cases/notification-service";
 
-export async function createRequestUseCase(
-	input: CreateRequestDTO,
-	performedBy?: string,
-): Promise<RequestResponseDTO> {
+export async function createMyRequestUseCase(
+	userId: string,
+	input: CreateMyRequestDTO,
+): Promise<MyRequestResponseDTO> {
 	if (input.predictedEndDate <= input.predictedStartDate) {
 		throw new InvalidRequestPeriodError();
 	}
 
-	const user = await findUserById(input.userId);
+	const user = await findUserById(userId);
 
 	if (!user) {
 		throw new UserNotFoundError();
@@ -58,28 +58,26 @@ export async function createRequestUseCase(
 		throw new VehicleAlreadyScheduledError();
 	}
 
-	const request = await insertRequest({
-		userId: input.userId,
+	const createdRequest = await insertRequest({
+		userId,
 		vehicleId: input.vehicleId,
-		status: REQUEST_STATUSES[0], // PENDING
+		status: REQUEST_STATUSES[0],
 		predictedStartDate: input.predictedStartDate,
 		predictedEndDate: input.predictedEndDate,
 		destination: input.destination,
 		reason: input.reason,
 	});
 
-	// Buscar lista de emails dos admins
-	// Buscar nome do user e nome do veículo
-
-	// Dar o push na fila de mensagens para enviar email de notificação para os admins
-
 	await createAuditLog({
-		action: AUDIT_ACTIONS[6], // REQUEST.CREATED
-		entityId: request.id,
-		performedBy,
+		action: AUDIT_ACTIONS[6],
+		entityId: createdRequest.id,
+		performedBy: userId,
 	});
 
-	await notifyAdminsAboutNewRequest(request.id);
+	await notifyAdminsAboutNewRequest(createdRequest.id);
 
-	return requestResponseSchema.parse(request);
+	return myRequestResponseSchema.parse({
+		...createdRequest,
+		vehicle,
+	});
 }
