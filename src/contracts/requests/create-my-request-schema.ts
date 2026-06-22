@@ -1,8 +1,7 @@
 import { z } from "zod";
 
-export const createRequestSchema = z
-	.object({
-		userId: z.uuid(),
+export const createMyRequestSchema = z
+	.strictObject({
 		vehicleId: z.uuid(),
 		predictedStartDate: z.coerce.date(),
 		predictedEndDate: z.coerce.date(),
@@ -14,4 +13,4 @@ export const createRequestSchema = z
 		path: ["predictedEndDate"],
 	});
 
-export type CreateRequestDTO = z.infer<typeof createRequestSchema>;
+export type CreateMyRequestDTO = z.infer<typeof createMyRequestSchema>;
