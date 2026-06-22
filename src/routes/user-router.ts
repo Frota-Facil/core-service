@@ -2,6 +2,8 @@ import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { createUserSchema } from "@/contracts/users/create-user-schema";
+import { meResponseSchema } from "@/contracts/users/me-response-schema";
+import { updateMeSchema } from "@/contracts/users/update-me-schema";
 import { updateUserSchema } from "@/contracts/users/update-user-schema";
 import { userIdParamSchema } from "@/contracts/users/user-id-param-schema";
 import { userResponseSchema } from "@/contracts/users/user-response-schema";
@@ -12,9 +14,44 @@ import { createUserUseCase } from "@/use-cases/users/create-user";
 import { deleteUserUseCase } from "@/use-cases/users/delete-user";
 import { fetchUserByIdUseCase } from "@/use-cases/users/fetch-user-by-id";
 import { fetchUsersUseCase } from "@/use-cases/users/fetch-users";
+import { getMeUseCase } from "@/use-cases/users/get-me";
+import { updateMeUseCase } from "@/use-cases/users/update-me";
 import { updateUserUseCase } from "@/use-cases/users/update-user";
 
 export async function userRouter(app: FastifyInstance) {
+	app.withTypeProvider<ZodTypeProvider>().get(
+		"/me",
+		{
+			preHandler: [verifyJwt],
+			schema: {
+				response: {
+					200: meResponseSchema,
+				},
+			},
+		},
+		async (request, reply) => {
+			const user = await getMeUseCase(request.user.id);
+			return reply.status(200).send(user);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().patch(
+		"/me",
+		{
+			preHandler: [verifyJwt],
+			schema: {
+				body: updateMeSchema,
+				response: {
+					200: meResponseSchema,
+				},
+			},
+		},
+		async (request, reply) => {
+			const user = await updateMeUseCase(request.user.id, request.body);
+			return reply.status(200).send(user);
+		},
+	);
+
 	app.withTypeProvider<ZodTypeProvider>().post(
 		"/admin/users",
 		{
