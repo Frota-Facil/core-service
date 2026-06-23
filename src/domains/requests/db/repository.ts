@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, lt } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, lt } from "drizzle-orm";
 import { requests } from "@/domains/requests/schema";
 import { REQUEST_STATUSES } from "@/domains/requests/status";
 import { users } from "@/domains/users/schema";
@@ -15,6 +15,19 @@ export type RequestWithRelations = Request & {
 	vehicle: {
 		id: string;
 		model: string;
+	};
+};
+
+export type RequestWithVehicle = Request & {
+	vehicle: {
+		id: string;
+		plate: string;
+		model: string;
+		year: number;
+		odometer: number;
+		imageUrl: string | null;
+		status: (typeof vehicles.$inferSelect)["status"];
+		type: (typeof vehicles.$inferSelect)["type"];
 	};
 };
 
@@ -37,6 +50,30 @@ const requestWithRelationsColumns = {
 	vehicle: {
 		id: vehicles.id,
 		model: vehicles.model,
+	},
+};
+
+const requestWithVehicleColumns = {
+	id: requests.id,
+	userId: requests.userId,
+	vehicleId: requests.vehicleId,
+	approvedBy: requests.approvedBy,
+	status: requests.status,
+	predictedStartDate: requests.predictedStartDate,
+	predictedEndDate: requests.predictedEndDate,
+	destination: requests.destination,
+	reason: requests.reason,
+	createdAt: requests.createdAt,
+	updatedAt: requests.updatedAt,
+	vehicle: {
+		id: vehicles.id,
+		plate: vehicles.plate,
+		model: vehicles.model,
+		year: vehicles.year,
+		odometer: vehicles.odometer,
+		imageUrl: vehicles.imageUrl,
+		status: vehicles.status,
+		type: vehicles.type,
 	},
 };
 
@@ -111,6 +148,19 @@ export async function findActiveOrFutureRequestsByUserId(
 				gt(requests.predictedEndDate, new Date()),
 			),
 		);
+
+	return foundRequests;
+}
+
+export async function findRequestsByUserIdWithVehicle(
+	userId: string,
+): Promise<RequestWithVehicle[]> {
+	const foundRequests = await db
+		.select(requestWithVehicleColumns)
+		.from(requests)
+		.innerJoin(vehicles, eq(requests.vehicleId, vehicles.id))
+		.where(eq(requests.userId, userId))
+		.orderBy(desc(requests.predictedStartDate));
 
 	return foundRequests;
 }
