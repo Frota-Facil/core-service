@@ -9,6 +9,7 @@ export const requestResponseSchema = z.object({
 	status: z.enum(REQUEST_STATUSES),
 	predictedStartDate: z.date(),
 	predictedEndDate: z.date(),
+	destination: z.string(),
 	reason: z.string(),
 	createdAt: z.date(),
 	updatedAt: z.date(),

@@ -26,6 +26,7 @@ const requestWithRelationsColumns = {
 	status: requests.status,
 	predictedStartDate: requests.predictedStartDate,
 	predictedEndDate: requests.predictedEndDate,
+	destination: requests.destination,
 	reason: requests.reason,
 	createdAt: requests.createdAt,
 	updatedAt: requests.updatedAt,

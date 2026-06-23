@@ -6,6 +6,7 @@ export const createRequestSchema = z
 		vehicleId: z.uuid(),
 		predictedStartDate: z.coerce.date(),
 		predictedEndDate: z.coerce.date(),
+		destination: z.string().min(1),
 		reason: z.string().min(1),
 	})
 	.refine((data) => data.predictedEndDate > data.predictedStartDate, {

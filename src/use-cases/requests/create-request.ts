@@ -64,6 +64,7 @@ export async function createRequestUseCase(
 		status: REQUEST_STATUSES[0], // PENDING
 		predictedStartDate: input.predictedStartDate,
 		predictedEndDate: input.predictedEndDate,
+		destination: input.destination,
 		reason: input.reason,
 	});
 
