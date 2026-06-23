@@ -51,7 +51,7 @@ export async function approveRequestUseCase(
 	await notifyDriverAboutRequestApproved(updatedRequest.id);
 
 	await sendPushNotificationToUser({
-		userId: updatedRequest.userId,
+		userId: request.userId,
 		title: "Solicitação aprovada",
 		body: "Sua solicitação de veículo foi aprovada.",
 		data: {

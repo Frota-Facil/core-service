@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { users } from "@/domains/users/schema";
 
-export const PUSH_TOKEN_PLATFORMS = ["android", "ios", "web"] as const;
+export const PUSH_TOKEN_PLATFORMS = ["android", "ios"] as const;
 
 export type PushTokenPlatform = (typeof PUSH_TOKEN_PLATFORMS)[number];
 

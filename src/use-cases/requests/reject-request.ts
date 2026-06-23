@@ -49,7 +49,7 @@ export async function rejectRequestUseCase(
 	await notifyDriverAboutRequestRejected(updatedRequest.id);
 
 	await sendPushNotificationToUser({
-		userId: updatedRequest.userId,
+		userId: request.userId,
 		title: "Solicitação recusada",
 		body: "Sua solicitação de veículo foi recusada.",
 		data: {

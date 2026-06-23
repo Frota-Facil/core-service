@@ -1,10 +1,10 @@
+import { eq } from "drizzle-orm";
 import {
-	pushTokens,
 	type PushToken,
 	type PushTokenPlatform,
+	pushTokens,
 } from "@/domains/push-tokens/schema";
 import { db } from "@/drizzle/client";
-import { eq } from "drizzle-orm";
 
 type CreateOrUpdatePushTokenParams = {
 	userId: string;
