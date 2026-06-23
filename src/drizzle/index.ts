@@ -1,5 +1,6 @@
 export { auditLogs } from "@/domains/audit-logs/schema";
 export * from "@/domains/notifications/schema";
+export { pushTokens } from "@/domains/push-tokens/schema";
 export { requests } from "@/domains/requests/schema";
 export { routes } from "@/domains/routes/schema";
 export { tracks } from "@/domains/tracks/schema";
