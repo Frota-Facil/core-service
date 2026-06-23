@@ -78,6 +78,13 @@
       "when": 1782089028166,
       "tag": "0010_warm_power_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1782176646910,
+      "tag": "0011_stormy_photon",
+      "breakpoints": true
     }
   ]
 }
