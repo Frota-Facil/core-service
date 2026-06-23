@@ -1,11 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
+import { createOrUpdatePushToken } from "@/domains/push-tokens/db/repository";
 import { PUSH_TOKEN_PLATFORMS } from "@/domains/push-tokens/schema";
 import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
-import { savePushTokenUseCase } from "@/use-cases/push-tokens/save-push-token";
 
 const createPushTokenBodySchema = z.object({
 	token: z.string().min(1),
@@ -22,7 +22,7 @@ export async function pushTokenRouter(app: FastifyInstance) {
 			},
 		},
 		async (request, reply) => {
-			const pushToken = await savePushTokenUseCase({
+			const pushToken = await createOrUpdatePushToken({
 				userId: request.user.id,
 				token: request.body.token,
 				platform: request.body.platform,

@@ -15,6 +15,7 @@ import { REQUEST_STATUSES } from "@/domains/requests/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { notifyDriverAboutRequestApproved } from "@/use-cases/notification-service";
 import { createRequestApprovedNotificationUseCase } from "@/use-cases/notifications/create-request-notification";
+import { sendPushNotificationToUser } from "@/use-cases/push-notification-service";
 
 export async function approveRequestUseCase(
 	requestId: string,
@@ -48,6 +49,16 @@ export async function approveRequestUseCase(
 	await createRequestApprovedNotificationUseCase(updatedRequest.id);
 
 	await notifyDriverAboutRequestApproved(updatedRequest.id);
+
+	await sendPushNotificationToUser({
+		userId: request.userId,
+		title: "Solicitação aprovada",
+		body: "Sua solicitação de veículo foi aprovada.",
+		data: {
+			requestId: updatedRequest.id,
+			type: "REQUEST_APPROVED",
+		},
+	});
 
 	return requestResponseSchema.parse(updatedRequest);
 }
