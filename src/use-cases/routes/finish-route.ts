@@ -1,19 +1,20 @@
 import type { FinishRouteDTO } from "@/contracts/routes/finish-route-schema";
 import {
-	type RouteResponseDTO,
-	routeResponseSchema,
-} from "@/contracts/routes/route-response-schema";
+	type TripResponseDTO,
+	tripResponseSchema,
+} from "@/contracts/routes/trip-response-schema";
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
-import { findRouteById, updateRouteById } from "@/domains/routes/db/repository";
+import {
+	findTripByIdAndUserId,
+	updateRouteById,
+} from "@/domains/routes/db/repository";
 import {
 	RouteIsNotStartedError,
 	RouteNotFoundError,
 } from "@/domains/routes/errors";
-import { ROUTES_STATUSES } from "@/domains/routes/status";
+import { ROUTE_STATUS } from "@/domains/routes/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { generateRouteReportUseCase } from "@/use-cases/reports/generate-route-report";
-
-type FinishRouteResponseDTO = Omit<RouteResponseDTO, "reportMarkdown">;
 
 async function generateAndSaveRouteReport(routeId: string) {
 	const reportMarkdown = await generateRouteReportUseCase(routeId);
@@ -26,20 +27,20 @@ async function generateAndSaveRouteReport(routeId: string) {
 export async function finishRouteUseCase(
 	routeId: string,
 	input: FinishRouteDTO,
-	performedBy?: string,
-): Promise<FinishRouteResponseDTO> {
-	const route = await findRouteById(routeId);
+	userId: string,
+): Promise<TripResponseDTO> {
+	const trip = await findTripByIdAndUserId(routeId, userId);
 
-	if (!route) {
+	if (!trip) {
 		throw new RouteNotFoundError();
 	}
 
-	if (route.status !== ROUTES_STATUSES[2]) {
+	if (trip.routeStatus !== ROUTE_STATUS.STARTED) {
 		throw new RouteIsNotStartedError();
 	}
 
 	const updatedRoute = await updateRouteById(routeId, {
-		status: ROUTES_STATUSES[3], // FINISHED
+		status: ROUTE_STATUS.FINISHED,
 		description: input.description,
 		finishedAt: new Date(),
 	});
@@ -53,13 +54,15 @@ export async function finishRouteUseCase(
 	});
 
 	await createAuditLog({
-		action: AUDIT_ACTIONS[10], // TRIP.FINISHED
+		action: AUDIT_ACTIONS[10],
 		entityId: updatedRoute.id,
-		performedBy,
+		performedBy: userId,
 	});
 
-	const routeResponse = routeResponseSchema.parse(updatedRoute);
-	delete routeResponse.reportMarkdown;
-
-	return routeResponse;
+	return tripResponseSchema.parse({
+		...trip,
+		routeStatus: updatedRoute.status,
+		description: updatedRoute.description,
+		finishedAt: updatedRoute.finishedAt,
+	});
 }

@@ -7,6 +7,7 @@ export const routes = pgTable("routes", {
 
 	requestId: uuid("request_id")
 		.notNull()
+		.unique()
 		.references(() => requests.id, {
 			onDelete: "cascade",
 		}),

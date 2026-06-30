@@ -1,54 +1,57 @@
+import {
+	type TripResponseDTO,
+	tripResponseSchema,
+} from "@/contracts/routes/trip-response-schema";
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
+import { RequestIsNotApprovedError } from "@/domains/requests/errors";
+import { REQUEST_STATUS } from "@/domains/requests/status";
 import {
-	type RouteResponseDTO,
-	routeResponseSchema,
-} from "@/contracts/routes/route-response-schema";
-import { findRequestById } from "@/domains/requests/db/repository";
-import {
-	RequestIsNotApprovedError,
-	RequestNotFoundError,
-} from "@/domains/requests/errors";
-import { REQUEST_STATUSES } from "@/domains/requests/status";
-import {
-	findRouteByRequestId,
-	insertRoute,
+	findTripByIdAndUserId,
+	updateRouteById,
 } from "@/domains/routes/db/repository";
-import { RouteAlreadyStartedError } from "@/domains/routes/errors";
-import { ROUTES_STATUSES } from "@/domains/routes/status";
+import {
+	RouteIsNotReadyError,
+	RouteNotFoundError,
+} from "@/domains/routes/errors";
+import { ROUTE_STATUS } from "@/domains/routes/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 
 export async function startRouteUseCase(
-	requestId: string,
-	performedBy?: string,
-): Promise<RouteResponseDTO> {
-	const request = await findRequestById(requestId);
+	routeId: string,
+	userId: string,
+): Promise<TripResponseDTO> {
+	const trip = await findTripByIdAndUserId(routeId, userId);
 
-	if (!request) {
-		throw new RequestNotFoundError();
+	if (!trip) {
+		throw new RouteNotFoundError();
 	}
 
-	if (request.status !== REQUEST_STATUSES[1]) {
+	if (trip.requestStatus !== REQUEST_STATUS.APPROVED) {
 		throw new RequestIsNotApprovedError();
 	}
 
-	const existingRoute = await findRouteByRequestId(requestId);
-
-	if (existingRoute) {
-		throw new RouteAlreadyStartedError();
+	if (trip.routeStatus !== ROUTE_STATUS.READY) {
+		throw new RouteIsNotReadyError();
 	}
 
-	const route = await insertRoute({
-		requestId,
-		status: ROUTES_STATUSES[2], // STARTED
-		description: null,
+	const updatedRoute = await updateRouteById(routeId, {
+		status: ROUTE_STATUS.STARTED,
 		startedAt: new Date(),
 	});
 
+	if (!updatedRoute) {
+		throw new RouteNotFoundError();
+	}
+
 	await createAuditLog({
-		action: AUDIT_ACTIONS[9], // TRIP.STARTED
-		entityId: route.id,
-		performedBy,
+		action: AUDIT_ACTIONS[9],
+		entityId: updatedRoute.id,
+		performedBy: userId,
 	});
 
-	return routeResponseSchema.parse(route);
+	return tripResponseSchema.parse({
+		...trip,
+		routeStatus: updatedRoute.status,
+		startedAt: updatedRoute.startedAt,
+	});
 }

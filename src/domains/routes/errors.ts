@@ -12,6 +12,12 @@ export const RouteAlreadyStartedError = createError(
 	400,
 );
 
+export const RouteIsNotReadyError = createError(
+	"RouteIsNotReadyError",
+	"A rota não está pronta para ser iniciada",
+	400,
+);
+
 export const RouteIsNotStartedError = createError(
 	"RouteIsNotStartedError",
 	"A rota ainda não foi iniciada ou já foi finalizada",
