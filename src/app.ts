@@ -10,6 +10,7 @@ import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import jwtPlugin from "@/plugins/jwt";
 import rabbitPlugin from "@/plugins/rabbitmq";
+import { auditLogRouter } from "@/routes/audit-log-router";
 import { authRouter } from "@/routes/auth-router";
 import { notificationRouter } from "@/routes/notification-router";
 import { pushTokenRouter } from "@/routes/push-token-router";
@@ -52,6 +53,7 @@ app.register(routeRouter);
 app.register(trackRouter);
 app.register(notificationRouter);
 app.register(pushTokenRouter);
+app.register(auditLogRouter);
 
 app.register(reportRouter);
 
