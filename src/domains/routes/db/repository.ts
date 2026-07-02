@@ -35,53 +35,77 @@ export type FinishedRouteWithDetails = {
 };
 
 export type Trip = {
-	id: string;
-	requestId: string;
-	routeStatus: (typeof routes.$inferSelect)["status"];
-	requestStatus: (typeof requests.$inferSelect)["status"];
-	description: string | null;
-	reportMarkdown: string | null;
-	startedAt: Date | null;
-	finishedAt: Date | null;
-	predictedStartDate: Date;
-	predictedEndDate: Date;
-	destination: string;
-	reason: string;
-	vehicle: {
-		id: string;
-		plate: string;
-		model: string;
-		year: number;
-		odometer: number;
-		imageUrl: string | null;
-		status: (typeof vehicles.$inferSelect)["status"];
-		type: (typeof vehicles.$inferSelect)["type"];
-	};
+  id: string;
+  requestId: string;
+  routeStatus: (typeof routes.$inferSelect)["status"];
+  requestStatus: (typeof requests.$inferSelect)["status"];
+  description: string | null;
+  reportMarkdown: string | null;
+  startedAt: Date | null;
+  finishedAt: Date | null;
+  predictedStartDate: Date;
+  predictedEndDate: Date;
+  destination: string;
+  reason: string;
+  vehicle: {
+    id: string;
+    plate: string;
+    model: string;
+    year: number;
+    odometer: number;
+    imageUrl: string |null;
+    status: (typeof vehicles.$inferSelect)["status"];
+    type: (typeof vehicles.$inferSelect)["type"];
+  };
 };
 
 const tripColumns = {
-	id: routes.id,
-	requestId: routes.requestId,
-	routeStatus: routes.status,
-	requestStatus: requests.status,
-	description: routes.description,
-	reportMarkdown: routes.reportMarkdown,
-	startedAt: routes.startedAt,
-	finishedAt: routes.finishedAt,
-	predictedStartDate: requests.predictedStartDate,
-	predictedEndDate: requests.predictedEndDate,
-	destination: requests.destination,
-	reason: requests.reason,
-	vehicle: {
-		id: vehicles.id,
-		plate: vehicles.plate,
-		model: vehicles.model,
-		year: vehicles.year,
-		odometer: vehicles.odometer,
-		imageUrl: vehicles.imageUrl,
-		status: vehicles.status,
-		type: vehicles.type,
-	},
+  id: routes.id,
+  requestId: routes.requestId,
+  routeStatus: routes.status,
+  requestStatus: requests.status,
+  description: routes.description,
+  reportMarkdown: routes.reportMarkdown,
+  startedAt: routes.startedAt,
+  finishedAt: routes.finishedAt,
+  predictedStartDate: requests.predictedStartDate,
+  predictedEndDate: requests.predictedEndDate,
+  destination: requests.destination,
+  reason: requests.reason,
+  vehicle: {
+    id: vehicles.id,
+    plate: vehicles.plate,
+    model: vehicles.model,
+    year: vehicles.year,
+    odometer: vehicles.odometer,
+    imageUrl: vehicles.imageUrl,
+    status: vehicles.status,
+    type: vehicles.type,
+  },
+};
+
+export type RouteWithRequestDetails = Route & {
+  request: {
+    id: string;
+    userId: string;
+    vehicleId: string;
+    approvedBy: string | null;
+    status: (typeof requests.$inferSelect)["status"];
+    predictedStartDate: Date;
+    predictedEndDate: Date;
+    destination: string;
+    reason: string;
+    createdAt: Date;
+    updatedAt: Date;
+    user: {
+      id: string;
+      name: string;
+    };
+    vehicle: {
+      id: string;
+      model: string;
+    };
+  };
 };
 
 export async function insertRoute(
@@ -100,6 +124,71 @@ export async function findRouteById(id: string): Promise<Route | undefined> {
 		.limit(1);
 
 	return route;
+}
+
+export async function findRouteWithRequestDetailsById(
+	id: string,
+): Promise<RouteWithRequestDetails | undefined> {
+	const [route] = await db
+		.select({
+			id: routes.id,
+			requestId: routes.requestId,
+			status: routes.status,
+			description: routes.description,
+			reportMarkdown: routes.reportMarkdown,
+			startedAt: routes.startedAt,
+			finishedAt: routes.finishedAt,
+			createdAt: routes.createdAt,
+			updatedAt: routes.updatedAt,
+			request: {
+				id: requests.id,
+				userId: requests.userId,
+				vehicleId: requests.vehicleId,
+				approvedBy: requests.approvedBy,
+				status: requests.status,
+				predictedStartDate: requests.predictedStartDate,
+				predictedEndDate: requests.predictedEndDate,
+				destination: requests.destination,
+				reason: requests.reason,
+				createdAt: requests.createdAt,
+				updatedAt: requests.updatedAt,
+			},
+			user: {
+				id: users.id,
+				name: users.name,
+			},
+			vehicle: {
+				id: vehicles.id,
+				model: vehicles.model,
+			},
+		})
+		.from(routes)
+		.innerJoin(requests, eq(routes.requestId, requests.id))
+		.innerJoin(users, eq(requests.userId, users.id))
+		.innerJoin(vehicles, eq(requests.vehicleId, vehicles.id))
+		.where(eq(routes.id, id))
+		.limit(1);
+
+	if (!route) {
+		return undefined;
+	}
+
+	return {
+		id: route.id,
+		requestId: route.requestId,
+		status: route.status,
+		description: route.description,
+		reportMarkdown: route.reportMarkdown,
+		startedAt: route.startedAt,
+		finishedAt: route.finishedAt,
+		createdAt: route.createdAt,
+		updatedAt: route.updatedAt,
+		request: {
+			...route.request,
+			user: route.user,
+			vehicle: route.vehicle,
+		},
+	};
 }
 
 export async function findRouteByRequestId(

@@ -8,12 +8,15 @@ import {
 	routeIdParamSchema,
 } from "@/contracts/routes/route-params-schema";
 import { tripResponseSchema } from "@/contracts/routes/trip-response-schema";
+import { routeDetailResponseSchema } from "@/contracts/routes/route-detail-response-schema";
+import { routeResponseSchema } from "@/contracts/routes/route-response-schema";
 import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import { fetchFinishedRoutesUseCase } from "@/use-cases/routes/fetch-finished-routes";
 import { fetchMyTripUseCase } from "@/use-cases/routes/fetch-my-trip";
 import { fetchMyTripsUseCase } from "@/use-cases/routes/fetch-my-trips";
+import { fetchRouteDetailUseCase } from "@/use-cases/routes/fetch-route-detail";
 import { finishRouteUseCase } from "@/use-cases/routes/finish-route";
 import {
 	startRouteByRequestIdUseCase,
@@ -35,6 +38,24 @@ export async function routeRouter(app: FastifyInstance) {
 			const routes = await fetchFinishedRoutesUseCase();
 
 			return reply.status(200).send(routes);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().get(
+		"/admin/routes/:routeId",
+		{
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
+			schema: {
+				params: routeIdParamSchema,
+				response: {
+					200: routeDetailResponseSchema,
+				},
+			},
+		},
+		async (request, reply) => {
+			const route = await fetchRouteDetailUseCase(request.params.routeId);
+
+			return reply.status(200).send(route);
 		},
 	);
 
