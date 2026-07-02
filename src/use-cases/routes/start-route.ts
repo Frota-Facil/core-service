@@ -16,8 +16,11 @@ import {
 	RouteNotFoundError,
 } from "@/domains/routes/errors";
 import { ROUTE_STATUS } from "@/domains/routes/status";
+import { findUserById } from "@/domains/users/db/repository";
+import { findById } from "@/domains/vehicles/db/repository";
 import { VEHICLE_STATUS } from "@/domains/vehicles/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
+import { publishRouteStartedEvent } from "@/use-cases/route-event-service";
 
 const ROUTE_START_EARLY_WINDOW_IN_MS = 15 * 60 * 1000;
 
@@ -67,6 +70,13 @@ export async function startRouteUseCase(
 		performedBy: userId,
 	});
 
+	await notifyAdminsAboutRouteStarted({
+		routeId: updatedRoute.id,
+		startedAt: updatedRoute.startedAt,
+		userId,
+		vehicleId: trip.vehicle.id,
+	});
+
 	return tripResponseSchema.parse({
 		...trip,
 		routeStatus: updatedRoute.status,
@@ -89,4 +99,41 @@ export async function startRouteByRequestIdUseCase(
 	}
 
 	return startRouteUseCase(route.id, userId);
+}
+
+async function notifyAdminsAboutRouteStarted(params: {
+	routeId: string;
+	startedAt: Date | null;
+	userId: string;
+	vehicleId: string;
+}): Promise<void> {
+	try {
+		const [driver, vehicle] = await Promise.all([
+			findUserById(params.userId),
+			findById(params.vehicleId),
+		]);
+
+		if (!driver || !vehicle) {
+			return;
+		}
+
+		publishRouteStartedEvent({
+			type: "route.started",
+			routeId: params.routeId,
+			vehicle: {
+				id: vehicle.id,
+				model: vehicle.model,
+			},
+			driver: {
+				id: driver.id,
+				name: driver.name,
+			},
+			startedAt: (params.startedAt ?? new Date()).toISOString(),
+		});
+	} catch (error) {
+		console.error(
+			`Erro ao notificar admins sobre início da rota ${params.routeId}:`,
+			error,
+		);
+	}
 }
