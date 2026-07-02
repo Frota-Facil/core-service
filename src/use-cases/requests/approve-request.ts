@@ -11,7 +11,12 @@ import {
 	RequestIsNotPendingError,
 	RequestNotFoundError,
 } from "@/domains/requests/errors";
-import { REQUEST_STATUSES } from "@/domains/requests/status";
+import { REQUEST_STATUS } from "@/domains/requests/status";
+import {
+	findRouteByRequestId,
+	insertRoute,
+} from "@/domains/routes/db/repository";
+import { ROUTE_STATUS } from "@/domains/routes/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { notifyDriverAboutRequestApproved } from "@/use-cases/notification-service";
 import { createRequestApprovedNotificationUseCase } from "@/use-cases/notifications/create-request-notification";
@@ -27,17 +32,26 @@ export async function approveRequestUseCase(
 		throw new RequestNotFoundError();
 	}
 
-	if (request.status !== REQUEST_STATUSES[0]) {
+	if (request.status !== REQUEST_STATUS.PENDING) {
 		throw new RequestIsNotPendingError();
 	}
 
 	const updatedRequest = await updateRequestById(requestId, {
-		status: REQUEST_STATUSES[1], // APPROVED
+		status: REQUEST_STATUS.APPROVED,
 		approvedBy,
 	});
 
 	if (!updatedRequest) {
 		throw new RequestNotFoundError();
+	}
+
+	const existingRoute = await findRouteByRequestId(updatedRequest.id);
+
+	if (!existingRoute) {
+		await insertRoute({
+			requestId: updatedRequest.id,
+			status: ROUTE_STATUS.READY,
+		});
 	}
 
 	await createAuditLog({

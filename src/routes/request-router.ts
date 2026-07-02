@@ -13,6 +13,7 @@ import {
 	requestWithRelationsResponseSchema,
 } from "@/contracts/requests/request-response-schema";
 import { requestScheduleResponseSchema } from "@/contracts/requests/request-schedule-response-schema";
+import { updateMyRequestSchema } from "@/contracts/requests/update-my-request-schema";
 import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
@@ -26,6 +27,7 @@ import { fetchUserRequestsUseCase } from "@/use-cases/requests/fetch-user-reques
 import { fetchVehicleRequestsUseCase } from "@/use-cases/requests/fetch-vehicle-requests";
 import { fetchVehicleScheduleUseCase } from "@/use-cases/requests/fetch-vehicle-schedule";
 import { rejectRequestUseCase } from "@/use-cases/requests/reject-request";
+import { updateMyRequestUseCase } from "@/use-cases/requests/update-my-request";
 
 export async function requestRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().get(
@@ -63,6 +65,29 @@ export async function requestRouter(app: FastifyInstance) {
 			);
 
 			return reply.status(201).send(createdRequest);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().patch(
+		"/me/requests/:requestId",
+		{
+			preHandler: [verifyJwt],
+			schema: {
+				params: requestIdParamSchema,
+				body: updateMyRequestSchema,
+				response: {
+					200: myRequestResponseSchema,
+				},
+			},
+		},
+		async (request, reply) => {
+			const updatedRequest = await updateMyRequestUseCase(
+				request.user.id,
+				request.params.requestId,
+				request.body,
+			);
+
+			return reply.status(200).send(updatedRequest);
 		},
 	);
 

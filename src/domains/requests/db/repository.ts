@@ -1,6 +1,6 @@
-import { and, desc, eq, gt, inArray, lt } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, lt, ne } from "drizzle-orm";
 import { requests } from "@/domains/requests/schema";
-import { REQUEST_STATUSES } from "@/domains/requests/status";
+import { REQUEST_STATUS } from "@/domains/requests/status";
 import { users } from "@/domains/users/schema";
 import { vehicles } from "@/domains/vehicles/schema";
 import { db } from "@/drizzle/client";
@@ -101,6 +101,7 @@ export async function findVehicleScheduleConflict(params: {
 	vehicleId: string;
 	predictedStartDate: Date;
 	predictedEndDate: Date;
+	ignoredRequestId?: string;
 }): Promise<Request | undefined> {
 	const [request] = await db
 		.select()
@@ -109,9 +110,12 @@ export async function findVehicleScheduleConflict(params: {
 			and(
 				eq(requests.vehicleId, params.vehicleId),
 				inArray(requests.status, [
-					REQUEST_STATUSES[0], // PENDING
-					REQUEST_STATUSES[1], // APPROVED
+					REQUEST_STATUS.PENDING,
+					REQUEST_STATUS.APPROVED,
 				]),
+				params.ignoredRequestId
+					? ne(requests.id, params.ignoredRequestId)
+					: undefined,
 				lt(requests.predictedStartDate, params.predictedEndDate),
 				gt(requests.predictedEndDate, params.predictedStartDate),
 			),
@@ -184,7 +188,7 @@ export async function findPendingRequests(): Promise<RequestWithRelations[]> {
 		.from(requests)
 		.innerJoin(users, eq(requests.userId, users.id))
 		.innerJoin(vehicles, eq(requests.vehicleId, vehicles.id))
-		.where(eq(requests.status, REQUEST_STATUSES[0]));
+		.where(eq(requests.status, REQUEST_STATUS.PENDING));
 
 	return foundRequests;
 }

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { vehicles } from "@/domains/vehicles/schema";
-import { VEHICLE_STATUSES } from "@/domains/vehicles/status";
+import { VEHICLE_STATUS } from "@/domains/vehicles/status";
 import { db } from "@/drizzle/client";
 
 export type Vehicle = typeof vehicles.$inferSelect;
@@ -15,7 +15,7 @@ export async function fetchAllAvailable(): Promise<Vehicle[]> {
 	const foundVehicles = await db
 		.select()
 		.from(vehicles)
-		.where(eq(vehicles.status, VEHICLE_STATUSES[0]));
+		.where(eq(vehicles.status, VEHICLE_STATUS.AVAILABLE));
 
 	return foundVehicles;
 }

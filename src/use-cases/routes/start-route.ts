@@ -1,54 +1,92 @@
+import {
+	type TripResponseDTO,
+	tripResponseSchema,
+} from "@/contracts/routes/trip-response-schema";
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
-import {
-	type RouteResponseDTO,
-	routeResponseSchema,
-} from "@/contracts/routes/route-response-schema";
-import { findRequestById } from "@/domains/requests/db/repository";
-import {
-	RequestIsNotApprovedError,
-	RequestNotFoundError,
-} from "@/domains/requests/errors";
-import { REQUEST_STATUSES } from "@/domains/requests/status";
+import { RequestIsNotApprovedError } from "@/domains/requests/errors";
+import { REQUEST_STATUS } from "@/domains/requests/status";
 import {
 	findRouteByRequestId,
-	insertRoute,
+	findTripByIdAndUserId,
+	updateRouteAndVehicleStatusById,
 } from "@/domains/routes/db/repository";
-import { RouteAlreadyStartedError } from "@/domains/routes/errors";
-import { ROUTES_STATUSES } from "@/domains/routes/status";
+import {
+	RouteCannotBeStartedYetError,
+	RouteIsNotReadyError,
+	RouteNotFoundError,
+} from "@/domains/routes/errors";
+import { ROUTE_STATUS } from "@/domains/routes/status";
+import { VEHICLE_STATUS } from "@/domains/vehicles/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 
-export async function startRouteUseCase(
-	requestId: string,
-	performedBy?: string,
-): Promise<RouteResponseDTO> {
-	const request = await findRequestById(requestId);
+const ROUTE_START_EARLY_WINDOW_IN_MS = 15 * 60 * 1000;
 
-	if (!request) {
-		throw new RequestNotFoundError();
+export async function startRouteUseCase(
+	routeId: string,
+	userId: string,
+): Promise<TripResponseDTO> {
+	const trip = await findTripByIdAndUserId(routeId, userId);
+
+	if (!trip) {
+		throw new RouteNotFoundError();
 	}
 
-	if (request.status !== REQUEST_STATUSES[1]) {
+	if (trip.requestStatus !== REQUEST_STATUS.APPROVED) {
 		throw new RequestIsNotApprovedError();
 	}
 
-	const existingRoute = await findRouteByRequestId(requestId);
-
-	if (existingRoute) {
-		throw new RouteAlreadyStartedError();
+	if (trip.routeStatus !== ROUTE_STATUS.READY) {
+		throw new RouteIsNotReadyError();
 	}
 
-	const route = await insertRoute({
-		requestId,
-		status: ROUTES_STATUSES[2], // STARTED
-		description: null,
-		startedAt: new Date(),
+	const earliestStartDate = new Date(
+		trip.predictedStartDate.getTime() - ROUTE_START_EARLY_WINDOW_IN_MS,
+	);
+
+	if (Date.now() < earliestStartDate.getTime()) {
+		throw new RouteCannotBeStartedYetError();
+	}
+
+	const updatedRoute = await updateRouteAndVehicleStatusById({
+		routeId,
+		vehicleId: trip.vehicle.id,
+		routeData: {
+			status: ROUTE_STATUS.STARTED,
+			startedAt: new Date(),
+		},
+		vehicleStatus: VEHICLE_STATUS.IN_USE,
 	});
+
+	if (!updatedRoute) {
+		throw new RouteNotFoundError();
+	}
 
 	await createAuditLog({
-		action: AUDIT_ACTIONS[9], // TRIP.STARTED
-		entityId: route.id,
-		performedBy,
+		action: AUDIT_ACTIONS[9],
+		entityId: updatedRoute.id,
+		performedBy: userId,
 	});
 
-	return routeResponseSchema.parse(route);
+	return tripResponseSchema.parse({
+		...trip,
+		routeStatus: updatedRoute.status,
+		startedAt: updatedRoute.startedAt,
+		vehicle: {
+			...trip.vehicle,
+			status: VEHICLE_STATUS.IN_USE,
+		},
+	});
+}
+
+export async function startRouteByRequestIdUseCase(
+	requestId: string,
+	userId: string,
+): Promise<TripResponseDTO> {
+	const route = await findRouteByRequestId(requestId);
+
+	if (!route) {
+		throw new RouteNotFoundError();
+	}
+
+	return startRouteUseCase(route.id, userId);
 }
