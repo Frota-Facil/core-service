@@ -1,2 +1,12 @@
-export const VEHICLE_STATUSES = ["AVAILABLE", "IN_USE", "MAINTENANCE"] as const;
+export const VEHICLE_STATUS = {
+	AVAILABLE: "AVAILABLE",
+	IN_USE: "IN_USE",
+	MAINTENANCE: "MAINTENANCE",
+} as const;
+
+export const VEHICLE_STATUSES = [
+	VEHICLE_STATUS.AVAILABLE,
+	VEHICLE_STATUS.IN_USE,
+	VEHICLE_STATUS.MAINTENANCE,
+] as const;
 export type vehicleStatuses = (typeof VEHICLE_STATUSES)[number];

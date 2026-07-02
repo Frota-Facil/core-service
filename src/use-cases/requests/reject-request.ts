@@ -11,7 +11,7 @@ import {
 	RequestIsNotPendingError,
 	RequestNotFoundError,
 } from "@/domains/requests/errors";
-import { REQUEST_STATUSES } from "@/domains/requests/status";
+import { REQUEST_STATUS } from "@/domains/requests/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { notifyDriverAboutRequestRejected } from "@/use-cases/notification-service";
 import { createRequestRejectedNotificationUseCase } from "@/use-cases/notifications/create-request-notification";
@@ -27,12 +27,12 @@ export async function rejectRequestUseCase(
 		throw new RequestNotFoundError();
 	}
 
-	if (request.status !== REQUEST_STATUSES[0]) {
+	if (request.status !== REQUEST_STATUS.PENDING) {
 		throw new RequestIsNotPendingError();
 	}
 
 	const updatedRequest = await updateRequestById(requestId, {
-		status: REQUEST_STATUSES[2], // REJECTED
+		status: REQUEST_STATUS.REJECTED,
 	});
 
 	if (!updatedRequest) {

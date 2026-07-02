@@ -3,7 +3,7 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { requests } from "@/domains/requests/schema";
 import { REQUEST_STATUS } from "@/domains/requests/status";
 import { routes } from "@/domains/routes/schema";
-import { ROUTES_STATUSES } from "@/domains/routes/status";
+import { ROUTE_STATUS } from "@/domains/routes/status";
 import { users } from "@/domains/users/schema";
 import { vehicles } from "@/domains/vehicles/schema";
 import { db } from "@/drizzle/client";
@@ -160,6 +160,44 @@ export async function updateRouteById(
 	return route;
 }
 
+export async function updateRouteAndVehicleStatusById(params: {
+	routeId: string;
+	vehicleId: string;
+	routeData: Partial<typeof routes.$inferInsert>;
+	vehicleStatus: (typeof vehicles.$inferSelect)["status"];
+}): Promise<Route | undefined> {
+	return db.transaction(async (tx) => {
+		const now = new Date();
+		const [route] = await tx
+			.update(routes)
+			.set({
+				...params.routeData,
+				updatedAt: now,
+			})
+			.where(eq(routes.id, params.routeId))
+			.returning();
+
+		if (!route) {
+			return undefined;
+		}
+
+		const [vehicle] = await tx
+			.update(vehicles)
+			.set({
+				status: params.vehicleStatus,
+				updatedAt: now,
+			})
+			.where(eq(vehicles.id, params.vehicleId))
+			.returning({ id: vehicles.id });
+
+		if (!vehicle) {
+			throw new Error("Veículo da rota não encontrado");
+		}
+
+		return route;
+	});
+}
+
 export async function findFinishedRoutesWithDetails(): Promise<
 	FinishedRouteWithDetails[]
 > {
@@ -191,7 +229,7 @@ export async function findFinishedRoutesWithDetails(): Promise<
 		.innerJoin(requests, eq(routes.requestId, requests.id))
 		.innerJoin(users, eq(requests.userId, users.id))
 		.innerJoin(vehicles, eq(requests.vehicleId, vehicles.id))
-		.where(eq(routes.status, ROUTES_STATUSES[3]))
+		.where(eq(routes.status, ROUTE_STATUS.FINISHED))
 		.orderBy(desc(routes.finishedAt), desc(routes.createdAt));
 
 	return foundRoutes;

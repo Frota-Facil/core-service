@@ -28,16 +28,27 @@ type VehicleResponse = {
 	id: string;
 	plate: string;
 	model: string;
+	status: string;
 };
 
 type RequestResponse = {
 	id: string;
 	userId: string;
 	vehicleId: string;
+	status: string;
 	destination: string;
 	reason: string;
 	vehicle?: VehicleResponse;
 	passwordHash?: string;
+};
+
+type TripResponse = {
+	id: string;
+	requestId: string;
+	routeStatus: string;
+	requestStatus: string;
+	description: string | null;
+	vehicle: VehicleResponse;
 };
 
 let adminId: string | undefined;
@@ -221,6 +232,55 @@ async function run() {
 	assert.equal(created.body.vehicle?.id, vehicleId);
 	assert.equal(created.body.passwordHash, undefined);
 
+	const updatedDestination = "Centro Administrativo - Revisado";
+	const updatedReason = "Teste de integração Docker atualizado";
+	const updated = await api<RequestResponse>(
+		"PATCH",
+		`/me/requests/${created.body.id}`,
+		{
+			token: driverAToken,
+			body: {
+				destination: updatedDestination,
+				reason: updatedReason,
+			},
+		},
+	);
+	expectStatus("PATCH /me/requests/:requestId edita pendente", updated, 200);
+	assert.equal(updated.body.destination, updatedDestination);
+	assert.equal(updated.body.reason, updatedReason);
+	assert.equal(updated.body.vehicle?.id, vehicleId);
+
+	const selfConflictEdit = await api<RequestResponse>(
+		"PATCH",
+		`/me/requests/${created.body.id}`,
+		{
+			token: driverAToken,
+			body: {
+				predictedStartDate: start.toISOString(),
+				predictedEndDate: end.toISOString(),
+			},
+		},
+	);
+	expectStatus(
+		"PATCH /me/requests/:requestId não conflita consigo mesma",
+		selfConflictEdit,
+		200,
+	);
+
+	const otherDriverEdit = await api(
+		"PATCH",
+		`/me/requests/${created.body.id}`,
+		{
+			token: driverBToken,
+			body: { destination: "Tentativa indevida" },
+		},
+	);
+	expectStatus(
+		"PATCH /me/requests/:requestId isola motorista",
+		otherDriverEdit,
+		404,
+	);
+
 	const conflict = await api("POST", "/me/requests", {
 		token: driverAToken,
 		body: requestBody,
@@ -288,7 +348,85 @@ async function run() {
 		{ token: adminToken },
 	);
 	expectStatus("aprovação administrativa continua funcionando", approved, 200);
-	assert.equal(approved.body.destination, requestBody.destination);
+	assert.equal(approved.body.destination, updatedDestination);
+
+	const editApproved = await api("PATCH", `/me/requests/${created.body.id}`, {
+		token: driverAToken,
+		body: { destination: "Não deve alterar aprovada" },
+	});
+	expectStatus(
+		"PATCH /me/requests/:requestId bloqueia aprovada",
+		editApproved,
+		400,
+	);
+
+	const trips = await api<TripResponse[]>("GET", "/me/trips", {
+		token: driverAToken,
+	});
+	expectStatus("GET /me/trips lista viagem aprovada", trips, 200);
+	const trip = trips.body.find((item) => item.requestId === created.body.id);
+	assert(trip, "viagem aprovada não encontrada");
+
+	const startedTrip = await api<TripResponse>(
+		"PATCH",
+		`/me/trips/${trip.id}/start`,
+		{ token: driverAToken },
+	);
+	expectStatus(
+		"PATCH /me/trips/:routeId/start inicia viagem",
+		startedTrip,
+		200,
+	);
+	assert.equal(startedTrip.body.routeStatus, "STARTED");
+	assert.equal(startedTrip.body.vehicle.status, "IN_USE");
+
+	const vehiclesInUse = await api<VehicleResponse[]>("GET", "/vehicles", {
+		token: driverAToken,
+	});
+	expectStatus("GET /vehicles confirma veículo em uso", vehiclesInUse, 200);
+	assert.equal(
+		vehiclesInUse.body.find((item) => item.id === vehicleId)?.status,
+		"IN_USE",
+	);
+
+	const invalidFinish = await api("PATCH", `/me/trips/${trip.id}/finish`, {
+		token: driverAToken,
+		body: {},
+	});
+	expectStatus(
+		"PATCH /me/trips/:routeId/finish exige descrição",
+		invalidFinish,
+		400,
+	);
+
+	const finishedTrip = await api<TripResponse>(
+		"PATCH",
+		`/me/trips/${trip.id}/finish`,
+		{
+			token: driverAToken,
+			body: { description: "Viagem finalizada pelo teste de integração" },
+		},
+	);
+	expectStatus(
+		"PATCH /me/trips/:routeId/finish finaliza viagem",
+		finishedTrip,
+		200,
+	);
+	assert.equal(finishedTrip.body.routeStatus, "FINISHED");
+	assert.equal(finishedTrip.body.vehicle.status, "AVAILABLE");
+
+	const vehiclesAvailable = await api<VehicleResponse[]>("GET", "/vehicles", {
+		token: driverAToken,
+	});
+	expectStatus(
+		"GET /vehicles confirma veículo disponível",
+		vehiclesAvailable,
+		200,
+	);
+	assert.equal(
+		vehiclesAvailable.body.find((item) => item.id === vehicleId)?.status,
+		"AVAILABLE",
+	);
 
 	const rejected = await api<RequestResponse>(
 		"PUT",

@@ -29,3 +29,9 @@ export const RequestIsNotApprovedError = createError(
 	"A solicitação ainda não foi aprovada",
 	400,
 );
+
+export const RequestCannotBeUpdatedError = createError(
+	"RequestCannotBeUpdatedError",
+	"Solicitação não pode ser editada",
+	400,
+);

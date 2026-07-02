@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import {
+	REQUEST_STATUS,
 	REQUEST_STATUSES,
 	type requestStatuses,
 } from "@/domains/requests/status";
@@ -28,7 +29,7 @@ export const requests = pgTable("requests", {
 	status: text("status", { enum: REQUEST_STATUSES })
 		.notNull()
 		.$type<requestStatuses>()
-		.default(REQUEST_STATUSES[0]),
+		.default(REQUEST_STATUS.PENDING),
 
 	predictedStartDate: timestamp("predicted_start_date").notNull(),
 

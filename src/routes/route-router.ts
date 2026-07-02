@@ -15,7 +15,10 @@ import { fetchFinishedRoutesUseCase } from "@/use-cases/routes/fetch-finished-ro
 import { fetchMyTripUseCase } from "@/use-cases/routes/fetch-my-trip";
 import { fetchMyTripsUseCase } from "@/use-cases/routes/fetch-my-trips";
 import { finishRouteUseCase } from "@/use-cases/routes/finish-route";
-import { startRouteUseCase } from "@/use-cases/routes/start-route";
+import {
+	startRouteByRequestIdUseCase,
+	startRouteUseCase,
+} from "@/use-cases/routes/start-route";
 
 export async function routeRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().get(
@@ -47,7 +50,7 @@ export async function routeRouter(app: FastifyInstance) {
 			},
 		},
 		async (request, reply) => {
-			const trip = await startRouteUseCase(
+			const trip = await startRouteByRequestIdUseCase(
 				request.params.requestId,
 				request.user.id,
 			);

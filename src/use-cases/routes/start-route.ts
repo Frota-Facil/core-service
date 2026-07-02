@@ -6,14 +6,16 @@ import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
 import { RequestIsNotApprovedError } from "@/domains/requests/errors";
 import { REQUEST_STATUS } from "@/domains/requests/status";
 import {
+	findRouteByRequestId,
 	findTripByIdAndUserId,
-	updateRouteById,
+	updateRouteAndVehicleStatusById,
 } from "@/domains/routes/db/repository";
 import {
 	RouteIsNotReadyError,
 	RouteNotFoundError,
 } from "@/domains/routes/errors";
 import { ROUTE_STATUS } from "@/domains/routes/status";
+import { VEHICLE_STATUS } from "@/domains/vehicles/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 
 export async function startRouteUseCase(
@@ -34,9 +36,14 @@ export async function startRouteUseCase(
 		throw new RouteIsNotReadyError();
 	}
 
-	const updatedRoute = await updateRouteById(routeId, {
-		status: ROUTE_STATUS.STARTED,
-		startedAt: new Date(),
+	const updatedRoute = await updateRouteAndVehicleStatusById({
+		routeId,
+		vehicleId: trip.vehicle.id,
+		routeData: {
+			status: ROUTE_STATUS.STARTED,
+			startedAt: new Date(),
+		},
+		vehicleStatus: VEHICLE_STATUS.IN_USE,
 	});
 
 	if (!updatedRoute) {
@@ -53,5 +60,22 @@ export async function startRouteUseCase(
 		...trip,
 		routeStatus: updatedRoute.status,
 		startedAt: updatedRoute.startedAt,
+		vehicle: {
+			...trip.vehicle,
+			status: VEHICLE_STATUS.IN_USE,
+		},
 	});
+}
+
+export async function startRouteByRequestIdUseCase(
+	requestId: string,
+	userId: string,
+): Promise<TripResponseDTO> {
+	const route = await findRouteByRequestId(requestId);
+
+	if (!route) {
+		throw new RouteNotFoundError();
+	}
+
+	return startRouteUseCase(route.id, userId);
 }

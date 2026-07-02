@@ -6,6 +6,7 @@ import {
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
 import {
 	findTripByIdAndUserId,
+	updateRouteAndVehicleStatusById,
 	updateRouteById,
 } from "@/domains/routes/db/repository";
 import {
@@ -13,6 +14,7 @@ import {
 	RouteNotFoundError,
 } from "@/domains/routes/errors";
 import { ROUTE_STATUS } from "@/domains/routes/status";
+import { VEHICLE_STATUS } from "@/domains/vehicles/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { generateRouteReportUseCase } from "@/use-cases/reports/generate-route-report";
 
@@ -39,10 +41,15 @@ export async function finishRouteUseCase(
 		throw new RouteIsNotStartedError();
 	}
 
-	const updatedRoute = await updateRouteById(routeId, {
-		status: ROUTE_STATUS.FINISHED,
-		description: input.description,
-		finishedAt: new Date(),
+	const updatedRoute = await updateRouteAndVehicleStatusById({
+		routeId,
+		vehicleId: trip.vehicle.id,
+		routeData: {
+			status: ROUTE_STATUS.FINISHED,
+			description: input.description,
+			finishedAt: new Date(),
+		},
+		vehicleStatus: VEHICLE_STATUS.AVAILABLE,
 	});
 
 	if (!updatedRoute) {
@@ -64,5 +71,9 @@ export async function finishRouteUseCase(
 		routeStatus: updatedRoute.status,
 		description: updatedRoute.description,
 		finishedAt: updatedRoute.finishedAt,
+		vehicle: {
+			...trip.vehicle,
+			status: VEHICLE_STATUS.AVAILABLE,
+		},
 	});
 }
