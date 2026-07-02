@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, ne } from "drizzle-orm";
 
 import { requests } from "@/domains/requests/schema";
 import { REQUEST_STATUS } from "@/domains/requests/status";
@@ -124,6 +124,7 @@ export async function findTripsByUserId(userId: string): Promise<Trip[]> {
 			and(
 				eq(requests.userId, userId),
 				eq(requests.status, REQUEST_STATUS.APPROVED),
+				ne(routes.status, ROUTE_STATUS.FINISHED),
 			),
 		)
 		.orderBy(asc(requests.predictedStartDate));
@@ -192,6 +193,59 @@ export async function updateRouteAndVehicleStatusById(params: {
 
 		if (!vehicle) {
 			throw new Error("Veículo da rota não encontrado");
+		}
+
+		return route;
+	});
+}
+
+export async function updateRouteVehicleAndRequestStatusById(params: {
+	routeId: string;
+	vehicleId: string;
+	requestId: string;
+	routeData: Partial<typeof routes.$inferInsert>;
+	vehicleStatus: (typeof vehicles.$inferSelect)["status"];
+	requestStatus: (typeof requests.$inferSelect)["status"];
+}): Promise<Route | undefined> {
+	return db.transaction(async (tx) => {
+		const now = new Date();
+		const [route] = await tx
+			.update(routes)
+			.set({
+				...params.routeData,
+				updatedAt: now,
+			})
+			.where(eq(routes.id, params.routeId))
+			.returning();
+
+		if (!route) {
+			return undefined;
+		}
+
+		const [vehicle] = await tx
+			.update(vehicles)
+			.set({
+				status: params.vehicleStatus,
+				updatedAt: now,
+			})
+			.where(eq(vehicles.id, params.vehicleId))
+			.returning({ id: vehicles.id });
+
+		if (!vehicle) {
+			throw new Error("Veículo da rota não encontrado");
+		}
+
+		const [request] = await tx
+			.update(requests)
+			.set({
+				status: params.requestStatus,
+				updatedAt: now,
+			})
+			.where(eq(requests.id, params.requestId))
+			.returning({ id: requests.id });
+
+		if (!request) {
+			throw new Error("Solicitação da rota não encontrada");
 		}
 
 		return route;

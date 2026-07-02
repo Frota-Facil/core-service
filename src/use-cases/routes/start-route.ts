@@ -11,12 +11,15 @@ import {
 	updateRouteAndVehicleStatusById,
 } from "@/domains/routes/db/repository";
 import {
+	RouteCannotBeStartedYetError,
 	RouteIsNotReadyError,
 	RouteNotFoundError,
 } from "@/domains/routes/errors";
 import { ROUTE_STATUS } from "@/domains/routes/status";
 import { VEHICLE_STATUS } from "@/domains/vehicles/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
+
+const ROUTE_START_EARLY_WINDOW_IN_MS = 15 * 60 * 1000;
 
 export async function startRouteUseCase(
 	routeId: string,
@@ -34,6 +37,14 @@ export async function startRouteUseCase(
 
 	if (trip.routeStatus !== ROUTE_STATUS.READY) {
 		throw new RouteIsNotReadyError();
+	}
+
+	const earliestStartDate = new Date(
+		trip.predictedStartDate.getTime() - ROUTE_START_EARLY_WINDOW_IN_MS,
+	);
+
+	if (Date.now() < earliestStartDate.getTime()) {
+		throw new RouteCannotBeStartedYetError();
 	}
 
 	const updatedRoute = await updateRouteAndVehicleStatusById({

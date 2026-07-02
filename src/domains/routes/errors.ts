@@ -18,6 +18,12 @@ export const RouteIsNotReadyError = createError(
 	400,
 );
 
+export const RouteCannotBeStartedYetError = createError(
+	"RouteCannotBeStartedYetError",
+	"A viagem só pode ser iniciada até 15 minutos antes do horário previsto",
+	400,
+);
+
 export const RouteIsNotStartedError = createError(
 	"RouteIsNotStartedError",
 	"A rota ainda não foi iniciada ou já foi finalizada",

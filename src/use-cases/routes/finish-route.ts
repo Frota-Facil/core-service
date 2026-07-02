@@ -4,10 +4,11 @@ import {
 	tripResponseSchema,
 } from "@/contracts/routes/trip-response-schema";
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
+import { REQUEST_STATUS } from "@/domains/requests/status";
 import {
 	findTripByIdAndUserId,
-	updateRouteAndVehicleStatusById,
 	updateRouteById,
+	updateRouteVehicleAndRequestStatusById,
 } from "@/domains/routes/db/repository";
 import {
 	RouteIsNotStartedError,
@@ -41,15 +42,17 @@ export async function finishRouteUseCase(
 		throw new RouteIsNotStartedError();
 	}
 
-	const updatedRoute = await updateRouteAndVehicleStatusById({
+	const updatedRoute = await updateRouteVehicleAndRequestStatusById({
 		routeId,
 		vehicleId: trip.vehicle.id,
+		requestId: trip.requestId,
 		routeData: {
 			status: ROUTE_STATUS.FINISHED,
 			description: input.description,
 			finishedAt: new Date(),
 		},
 		vehicleStatus: VEHICLE_STATUS.AVAILABLE,
+		requestStatus: REQUEST_STATUS.COMPLETED,
 	});
 
 	if (!updatedRoute) {
@@ -69,6 +72,7 @@ export async function finishRouteUseCase(
 	return tripResponseSchema.parse({
 		...trip,
 		routeStatus: updatedRoute.status,
+		requestStatus: REQUEST_STATUS.COMPLETED,
 		description: updatedRoute.description,
 		finishedAt: updatedRoute.finishedAt,
 		vehicle: {
