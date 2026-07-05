@@ -14,6 +14,8 @@ export const users = pgTable(
 
 		phone: text("phone").notNull(),
 
+		photoUrl: text("photo_url"),
+
 		department: text("department"),
 
 		cpf: text("cpf").notNull().unique(),

@@ -5,6 +5,7 @@ const authenticatedUserResponseSchema = z.object({
 	id: z.uuid(),
 	name: z.string(),
 	email: z.email(),
+	photoUrl: z.string().nullable(),
 	role: z.enum(USER_ROLES),
 });
 

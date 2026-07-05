@@ -8,6 +8,7 @@ export const userResponseSchema = z.object({
 	cpf: z.string(),
 	cnh: z.string().min(11).max(11).nullish(),
 	phone: z.string().min(10).max(14),
+	photoUrl: z.string().nullable(),
 	department: z.string().nullish(),
 	role: z.enum(USER_ROLES).default(USER_ROLES[0]),
 	createdAt: z.date(),

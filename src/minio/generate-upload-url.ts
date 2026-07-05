@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env, MINIO_ADMIN_URL } from "@/env";
 import { s3Admin } from "@/minio/client";
@@ -19,8 +19,12 @@ function getExtension(contentType: string) {
 
 export async function generateUploadUrl({
 	contentType,
+	folder = "vehicles",
+	uploadHost,
 }: {
 	contentType: string;
+	folder?: "vehicles" | "users";
+	uploadHost?: string;
 }) {
 	const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
@@ -29,7 +33,7 @@ export async function generateUploadUrl({
 	}
 
 	const ext = getExtension(contentType);
-	const key = `vehicles/${randomUUID()}.${ext}`;
+	const key = `${folder}/${randomUUID()}.${ext}`;
 
 	const command = new PutObjectCommand({
 		Bucket: env.MINIO_BUCKET,
@@ -37,7 +41,7 @@ export async function generateUploadUrl({
 		ContentType: contentType,
 	});
 
-	const uploadUrl = await getSignedUrl(s3Admin, command, {
+	const uploadUrl = await getSignedUrl(getUploadClient(uploadHost), command, {
 		expiresIn: 60 * 5,
 	});
 
@@ -48,4 +52,26 @@ export async function generateUploadUrl({
 		fileUrl,
 		key,
 	};
+}
+
+function getUploadClient(uploadHost?: string) {
+	if (!uploadHost) {
+		return s3Admin;
+	}
+
+	const uploadEndpoint = new URL(MINIO_ADMIN_URL);
+	const hostUrl = new URL(`${uploadEndpoint.protocol}//${uploadHost}`);
+
+	uploadEndpoint.hostname = hostUrl.hostname;
+	uploadEndpoint.port = hostUrl.port || uploadEndpoint.port;
+
+	return new S3Client({
+		region: "us-east-1",
+		endpoint: uploadEndpoint.toString(),
+		credentials: {
+			accessKeyId: env.MINIO_ROOT_USER,
+			secretAccessKey: env.MINIO_ROOT_PASSWORD,
+		},
+		forcePathStyle: true,
+	});
 }
