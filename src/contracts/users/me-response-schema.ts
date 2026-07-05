@@ -7,6 +7,7 @@ export const meResponseSchema = z.object({
 	cpf: z.string(),
 	email: z.email(),
 	phone: z.string(),
+	photoUrl: z.string().nullable(),
 	cnh: z.string().nullable(),
 	department: z.string().nullable(),
 	role: z.enum(USER_ROLES),

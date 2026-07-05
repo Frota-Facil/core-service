@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const uploadPresignedSchema = z.object({
 	contentType: z.string(),
+	folder: z.enum(["vehicles", "users"]).optional(),
+	uploadHost: z.string().trim().min(1).optional(),
 });
 
 export const uploadPresignedResponseSchema = z.object({

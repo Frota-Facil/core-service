@@ -33,6 +33,7 @@ export async function createUserUseCase(
 		cpf: input.cpf,
 		cnh: input.cnh,
 		phone: input.phone,
+		photoUrl: input.photoUrl ?? null,
 		department: input.department,
 		role: input.role,
 		passwordHash,
