@@ -13,10 +13,10 @@ import { routeResponseSchema } from "@/contracts/routes/route-response-schema";
 import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
-import { fetchFinishedRoutesUseCase } from "@/use-cases/routes/fetch-finished-routes";
 import { fetchMyTripUseCase } from "@/use-cases/routes/fetch-my-trip";
 import { fetchMyTripsUseCase } from "@/use-cases/routes/fetch-my-trips";
 import { fetchRouteDetailUseCase } from "@/use-cases/routes/fetch-route-detail";
+import { fetchRoutesUseCase } from "@/use-cases/routes/fetch-routes";
 import { finishRouteUseCase } from "@/use-cases/routes/finish-route";
 import {
 	startRouteByRequestIdUseCase,
@@ -35,7 +35,7 @@ export async function routeRouter(app: FastifyInstance) {
 			},
 		},
 		async (_, reply) => {
-			const routes = await fetchFinishedRoutesUseCase();
+			const routes = await fetchRoutesUseCase();
 
 			return reply.status(200).send(routes);
 		},

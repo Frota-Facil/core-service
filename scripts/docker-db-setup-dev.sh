@@ -8,7 +8,7 @@ run_step() {
   local script_name="$1"
   echo ""
   echo "> docker compose -f ${COMPOSE_FILE} exec -T ${SERVICE_NAME} npm run ${script_name}"
-  docker compose -f "${COMPOSE_FILE}" exec -T "${SERVICE_NAME}" npm run "${script_name}"
+  docker-compose -f "${COMPOSE_FILE}" exec -T "${SERVICE_NAME}" npm run "${script_name}"
 }
 
 run_step "db:generate"

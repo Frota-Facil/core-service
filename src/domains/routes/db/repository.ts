@@ -10,7 +10,7 @@ import { db } from "@/drizzle/client";
 
 export type Route = typeof routes.$inferSelect;
 
-export type FinishedRouteWithDetails = {
+export type RouteWithDetails = {
 	id: string;
 	status: Route["status"];
 	startedAt: Date | null;
@@ -33,6 +33,8 @@ export type FinishedRouteWithDetails = {
 		plate: string;
 	};
 };
+
+export type FinishedRouteWithDetails = RouteWithDetails;
 
 export type Trip = {
   id: string;
@@ -374,6 +376,39 @@ export async function findFinishedRoutesWithDetails(): Promise<
 		.innerJoin(vehicles, eq(requests.vehicleId, vehicles.id))
 		.where(eq(routes.status, ROUTE_STATUS.FINISHED))
 		.orderBy(desc(routes.finishedAt), desc(routes.createdAt));
+
+	return foundRoutes;
+}
+
+export async function findRoutesWithDetails(): Promise<RouteWithDetails[]> {
+	const foundRoutes = await db
+		.select({
+			id: routes.id,
+			status: routes.status,
+			startedAt: routes.startedAt,
+			finishedAt: routes.finishedAt,
+			createdAt: routes.createdAt,
+			request: {
+				predictedStartDate: requests.predictedStartDate,
+				predictedEndDate: requests.predictedEndDate,
+				destination: requests.destination,
+				reason: requests.reason,
+			},
+			driver: {
+				id: users.id,
+				name: users.name,
+				department: users.department,
+			},
+			vehicle: {
+				id: vehicles.id,
+				model: vehicles.model,
+				plate: vehicles.plate,
+			},
+		})
+		.from(routes)
+		.innerJoin(requests, eq(routes.requestId, requests.id))
+		.innerJoin(users, eq(requests.userId, users.id))
+		.innerJoin(vehicles, eq(requests.vehicleId, vehicles.id));
 
 	return foundRoutes;
 }
