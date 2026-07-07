@@ -3,20 +3,13 @@ import {
 	requestResponseSchema,
 } from "@/contracts/requests/request-response-schema";
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
+import { approveRequestWithScheduleChecks } from "@/domains/requests/db/repository";
 import {
-	findRequestById,
-	updateRequestById,
-} from "@/domains/requests/db/repository";
-import {
+	DriverScheduleConflictError,
 	RequestIsNotPendingError,
 	RequestNotFoundError,
+	VehicleAlreadyScheduledError,
 } from "@/domains/requests/errors";
-import { REQUEST_STATUS } from "@/domains/requests/status";
-import {
-	findRouteByRequestId,
-	insertRoute,
-} from "@/domains/routes/db/repository";
-import { ROUTE_STATUS } from "@/domains/routes/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { notifyDriverAboutRequestApproved } from "@/use-cases/notification-service";
 import { createRequestApprovedNotificationUseCase } from "@/use-cases/notifications/create-request-notification";
@@ -26,33 +19,29 @@ export async function approveRequestUseCase(
 	requestId: string,
 	approvedBy: string,
 ): Promise<RequestResponseDTO> {
-	const request = await findRequestById(requestId);
+	const result = await approveRequestWithScheduleChecks(requestId, approvedBy);
 
-	if (!request) {
+	if (result.status === "not_found") {
 		throw new RequestNotFoundError();
 	}
 
-	if (request.status !== REQUEST_STATUS.PENDING) {
+	if (result.status === "not_pending") {
 		throw new RequestIsNotPendingError();
 	}
 
-	const updatedRequest = await updateRequestById(requestId, {
-		status: REQUEST_STATUS.APPROVED,
-		approvedBy,
-	});
+	if (result.status === "conflict") {
+		if (result.conflict === "vehicle") {
+			throw new VehicleAlreadyScheduledError();
+		}
 
-	if (!updatedRequest) {
+		throw new DriverScheduleConflictError();
+	}
+
+	if (result.status !== "approved") {
 		throw new RequestNotFoundError();
 	}
 
-	const existingRoute = await findRouteByRequestId(updatedRequest.id);
-
-	if (!existingRoute) {
-		await insertRoute({
-			requestId: updatedRequest.id,
-			status: ROUTE_STATUS.READY,
-		});
-	}
+	const updatedRequest = result.request;
 
 	await createAuditLog({
 		action: AUDIT_ACTIONS[7], // REQUEST.APPROVED
@@ -65,7 +54,7 @@ export async function approveRequestUseCase(
 	await notifyDriverAboutRequestApproved(updatedRequest.id);
 
 	await sendPushNotificationToUser({
-		userId: request.userId,
+		userId: updatedRequest.userId,
 		title: "Solicitação aprovada",
 		body: "Sua solicitação de veículo foi aprovada.",
 		data: {

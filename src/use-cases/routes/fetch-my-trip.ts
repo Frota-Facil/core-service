@@ -12,7 +12,11 @@ export async function fetchMyTripUseCase(
 ): Promise<TripResponseDTO> {
 	const trip = await findTripByIdAndUserId(routeId, userId);
 
-	if (!trip || trip.requestStatus !== REQUEST_STATUS.APPROVED) {
+	const canViewTrip =
+		trip?.requestStatus === REQUEST_STATUS.APPROVED ||
+		trip?.requestStatus === REQUEST_STATUS.COMPLETED;
+
+	if (!trip || !canViewTrip) {
 		throw new RouteNotFoundError();
 	}
 

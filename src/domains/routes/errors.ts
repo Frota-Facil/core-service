@@ -12,6 +12,12 @@ export const RouteAlreadyStartedError = createError(
 	400,
 );
 
+export const DriverRouteInProgressError = createError(
+	"DriverRouteInProgressError",
+	"Você já possui uma rota em andamento. Finalize a rota atual antes de iniciar outra.",
+	400,
+);
+
 export const RouteIsNotReadyError = createError(
 	"RouteIsNotReadyError",
 	"A rota não está pronta para ser iniciada",

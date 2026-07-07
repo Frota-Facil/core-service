@@ -1,6 +1,6 @@
 import {
-	adminRouteResponseSchema,
 	type AdminRouteResponseDTO,
+	adminRouteResponseSchema,
 } from "@/contracts/routes/admin-route-response-schema";
 import {
 	findRoutesWithDetails,
@@ -44,15 +44,26 @@ export async function fetchRoutesUseCase(): Promise<AdminRouteResponseDTO[]> {
 }
 
 function getRouteDate(route: RouteWithDetails) {
-	return route.finishedAt ?? route.startedAt ?? route.request.predictedStartDate;
+	return (
+		route.finishedAt ?? route.startedAt ?? route.request.predictedStartDate
+	);
 }
 
 function formatRouteDuration(route: RouteWithDetails) {
-	const start = route.startedAt ?? route.request.predictedStartDate;
-	const end = route.finishedAt ?? route.request.predictedEndDate;
-	const diffInMinutes = Math.max(
-		0,
-		Math.round((end.getTime() - start.getTime()) / 60000),
+	if (route.status !== ROUTE_STATUS.FINISHED) {
+		return null;
+	}
+
+	if (!route.startedAt || !route.finishedAt) {
+		return null;
+	}
+
+	if (route.finishedAt.getTime() < route.startedAt.getTime()) {
+		return null;
+	}
+
+	const diffInMinutes = Math.floor(
+		(route.finishedAt.getTime() - route.startedAt.getTime()) / 60000,
 	);
 	const hours = Math.floor(diffInMinutes / 60);
 	const minutes = diffInMinutes % 60;

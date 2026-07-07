@@ -1,10 +1,10 @@
 import {
-	adminRouteResponseSchema,
 	type AdminRouteResponseDTO,
+	adminRouteResponseSchema,
 } from "@/contracts/routes/admin-route-response-schema";
 import {
-	findFinishedRoutesWithDetails,
 	type FinishedRouteWithDetails,
+	findFinishedRoutesWithDetails,
 } from "@/domains/routes/db/repository";
 
 export async function fetchFinishedRoutesUseCase(): Promise<
@@ -15,7 +15,8 @@ export async function fetchFinishedRoutesUseCase(): Promise<
 	return routes.map((route) =>
 		adminRouteResponseSchema.parse({
 			id: route.id,
-			date: route.finishedAt ?? route.startedAt ?? route.request.predictedStartDate,
+			date:
+				route.finishedAt ?? route.startedAt ?? route.request.predictedStartDate,
 			vehicle: route.vehicle,
 			driver: route.driver,
 			duration: formatRouteDuration(route),
@@ -27,11 +28,16 @@ export async function fetchFinishedRoutesUseCase(): Promise<
 }
 
 function formatRouteDuration(route: FinishedRouteWithDetails) {
-	const start = route.startedAt ?? route.request.predictedStartDate;
-	const end = route.finishedAt ?? route.request.predictedEndDate;
-	const diffInMinutes = Math.max(
-		0,
-		Math.round((end.getTime() - start.getTime()) / 60000),
+	if (!route.startedAt || !route.finishedAt) {
+		return null;
+	}
+
+	if (route.finishedAt.getTime() < route.startedAt.getTime()) {
+		return null;
+	}
+
+	const diffInMinutes = Math.floor(
+		(route.finishedAt.getTime() - route.startedAt.getTime()) / 60000,
 	);
 	const hours = Math.floor(diffInMinutes / 60);
 	const minutes = diffInMinutes % 60;

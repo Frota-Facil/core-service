@@ -5,10 +5,10 @@ import {
 import type { UpdateMyRequestDTO } from "@/contracts/requests/update-my-request-schema";
 import {
 	findRequestById,
-	findVehicleScheduleConflict,
-	updateRequestById,
+	updateRequestWithScheduleChecks,
 } from "@/domains/requests/db/repository";
 import {
+	DriverScheduleConflictError,
 	InvalidRequestPeriodError,
 	RequestCannotBeUpdatedError,
 	RequestNotFoundError,
@@ -58,18 +58,8 @@ export async function updateMyRequestUseCase(
 		throw new VehicleNotAvailableError();
 	}
 
-	const conflict = await findVehicleScheduleConflict({
-		vehicleId,
-		predictedStartDate,
-		predictedEndDate,
-		ignoredRequestId: request.id,
-	});
-
-	if (conflict) {
-		throw new VehicleAlreadyScheduledError();
-	}
-
-	const updatedRequest = await updateRequestById(requestId, {
+	const result = await updateRequestWithScheduleChecks(requestId, {
+		userId,
 		vehicleId,
 		predictedStartDate,
 		predictedEndDate,
@@ -77,12 +67,20 @@ export async function updateMyRequestUseCase(
 		reason,
 	});
 
-	if (!updatedRequest) {
+	if (result.conflict === "vehicle") {
+		throw new VehicleAlreadyScheduledError();
+	}
+
+	if (result.conflict === "driver") {
+		throw new DriverScheduleConflictError();
+	}
+
+	if (!result.request) {
 		throw new RequestNotFoundError();
 	}
 
 	return myRequestResponseSchema.parse({
-		...updatedRequest,
+		...result.request,
 		vehicle,
 	});
 }

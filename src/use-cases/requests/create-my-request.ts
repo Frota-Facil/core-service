@@ -4,11 +4,9 @@ import {
 	myRequestResponseSchema,
 } from "@/contracts/requests/my-request-response-schema";
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
+import { insertRequestWithScheduleChecks } from "@/domains/requests/db/repository";
 import {
-	findVehicleScheduleConflict,
-	insertRequest,
-} from "@/domains/requests/db/repository";
-import {
+	DriverScheduleConflictError,
 	InvalidRequestPeriodError,
 	VehicleAlreadyScheduledError,
 } from "@/domains/requests/errors";
@@ -48,17 +46,7 @@ export async function createMyRequestUseCase(
 		throw new VehicleNotAvailableError();
 	}
 
-	const conflict = await findVehicleScheduleConflict({
-		vehicleId: input.vehicleId,
-		predictedStartDate: input.predictedStartDate,
-		predictedEndDate: input.predictedEndDate,
-	});
-
-	if (conflict) {
-		throw new VehicleAlreadyScheduledError();
-	}
-
-	const createdRequest = await insertRequest({
+	const result = await insertRequestWithScheduleChecks({
 		userId,
 		vehicleId: input.vehicleId,
 		status: REQUEST_STATUS.PENDING,
@@ -68,16 +56,28 @@ export async function createMyRequestUseCase(
 		reason: input.reason,
 	});
 
+	if (result.conflict === "vehicle") {
+		throw new VehicleAlreadyScheduledError();
+	}
+
+	if (result.conflict === "driver") {
+		throw new DriverScheduleConflictError();
+	}
+
+	if (!result.request) {
+		throw new DriverScheduleConflictError();
+	}
+
 	await createAuditLog({
 		action: AUDIT_ACTIONS[6],
-		entityId: createdRequest.id,
+		entityId: result.request.id,
 		performedBy: userId,
 	});
 
-	await notifyAdminsAboutNewRequest(createdRequest.id);
+	await notifyAdminsAboutNewRequest(result.request.id);
 
 	return myRequestResponseSchema.parse({
-		...createdRequest,
+		...result.request,
 		vehicle,
 	});
 }

@@ -3,14 +3,18 @@ import {
 	tripResponseSchema,
 } from "@/contracts/routes/trip-response-schema";
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
-import { RequestIsNotApprovedError } from "@/domains/requests/errors";
+import {
+	DriverScheduleConflictError,
+	RequestIsNotApprovedError,
+} from "@/domains/requests/errors";
 import { REQUEST_STATUS } from "@/domains/requests/status";
 import {
 	findRouteByRequestId,
 	findTripByIdAndUserId,
-	updateRouteAndVehicleStatusById,
+	startRouteForUserIfAvailable,
 } from "@/domains/routes/db/repository";
 import {
+	DriverRouteInProgressError,
 	RouteCannotBeStartedYetError,
 	RouteIsNotReadyError,
 	RouteNotFoundError,
@@ -50,8 +54,9 @@ export async function startRouteUseCase(
 		throw new RouteCannotBeStartedYetError();
 	}
 
-	const updatedRoute = await updateRouteAndVehicleStatusById({
+	const startResult = await startRouteForUserIfAvailable({
 		routeId,
+		userId,
 		vehicleId: trip.vehicle.id,
 		routeData: {
 			status: ROUTE_STATUS.STARTED,
@@ -60,9 +65,27 @@ export async function startRouteUseCase(
 		vehicleStatus: VEHICLE_STATUS.IN_USE,
 	});
 
-	if (!updatedRoute) {
+	if (startResult.status === "active_route_conflict") {
+		throw new DriverRouteInProgressError();
+	}
+
+	if (startResult.status === "not_ready") {
+		throw new RouteIsNotReadyError();
+	}
+
+	if (startResult.status === "schedule_conflict") {
+		throw new DriverScheduleConflictError();
+	}
+
+	if (startResult.status === "not_found") {
 		throw new RouteNotFoundError();
 	}
+
+	if (startResult.status !== "started") {
+		throw new RouteNotFoundError();
+	}
+
+	const { route: updatedRoute, trip: currentTrip } = startResult;
 
 	await createAuditLog({
 		action: AUDIT_ACTIONS[9],
@@ -78,11 +101,11 @@ export async function startRouteUseCase(
 	});
 
 	return tripResponseSchema.parse({
-		...trip,
+		...currentTrip,
 		routeStatus: updatedRoute.status,
 		startedAt: updatedRoute.startedAt,
 		vehicle: {
-			...trip.vehicle,
+			...currentTrip.vehicle,
 			status: VEHICLE_STATUS.IN_USE,
 		},
 	});

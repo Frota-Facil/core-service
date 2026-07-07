@@ -4,11 +4,9 @@ import {
 	requestResponseSchema,
 } from "@/contracts/requests/request-response-schema";
 import { AUDIT_ACTIONS } from "@/domains/audit-logs/actions";
+import { insertRequestWithScheduleChecks } from "@/domains/requests/db/repository";
 import {
-	findVehicleScheduleConflict,
-	insertRequest,
-} from "@/domains/requests/db/repository";
-import {
+	DriverScheduleConflictError,
 	InvalidRequestPeriodError,
 	VehicleAlreadyScheduledError,
 } from "@/domains/requests/errors";
@@ -48,17 +46,7 @@ export async function createRequestUseCase(
 		throw new VehicleNotAvailableError();
 	}
 
-	const conflict = await findVehicleScheduleConflict({
-		vehicleId: input.vehicleId,
-		predictedStartDate: input.predictedStartDate,
-		predictedEndDate: input.predictedEndDate,
-	});
-
-	if (conflict) {
-		throw new VehicleAlreadyScheduledError();
-	}
-
-	const request = await insertRequest({
+	const result = await insertRequestWithScheduleChecks({
 		userId: input.userId,
 		vehicleId: input.vehicleId,
 		status: REQUEST_STATUS.PENDING,
@@ -68,6 +56,18 @@ export async function createRequestUseCase(
 		reason: input.reason,
 	});
 
+	if (result.conflict === "vehicle") {
+		throw new VehicleAlreadyScheduledError();
+	}
+
+	if (result.conflict === "driver") {
+		throw new DriverScheduleConflictError();
+	}
+
+	if (!result.request) {
+		throw new DriverScheduleConflictError();
+	}
+
 	// Buscar lista de emails dos admins
 	// Buscar nome do user e nome do veículo
 
@@ -75,11 +75,11 @@ export async function createRequestUseCase(
 
 	await createAuditLog({
 		action: AUDIT_ACTIONS[6], // REQUEST.CREATED
-		entityId: request.id,
+		entityId: result.request.id,
 		performedBy,
 	});
 
-	await notifyAdminsAboutNewRequest(request.id);
+	await notifyAdminsAboutNewRequest(result.request.id);
 
-	return requestResponseSchema.parse(request);
+	return requestResponseSchema.parse(result.request);
 }

@@ -12,6 +12,12 @@ export const VehicleAlreadyScheduledError = createError(
 	400,
 );
 
+export const DriverScheduleConflictError = createError(
+	"DriverScheduleConflictError",
+	"Você já possui uma solicitação ou rota para este horário. Escolha outro horário.",
+	400,
+);
+
 export const InvalidRequestPeriodError = createError(
 	"InvalidRequestPeriodError",
 	"A data final deve ser maior que a data inicial",
