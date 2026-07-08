@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
 import { createMyRequestSchema } from "@/contracts/requests/create-my-request-schema";
 import { createRequestSchema } from "@/contracts/requests/create-request-schema";
 import { myRequestResponseSchema } from "@/contracts/requests/my-request-response-schema";
@@ -28,6 +29,14 @@ import { fetchVehicleRequestsUseCase } from "@/use-cases/requests/fetch-vehicle-
 import { fetchVehicleScheduleUseCase } from "@/use-cases/requests/fetch-vehicle-schedule";
 import { rejectRequestUseCase } from "@/use-cases/requests/reject-request";
 import { updateMyRequestUseCase } from "@/use-cases/requests/update-my-request";
+
+const vehicleScheduleQuerySchema = z.object({
+	date: z
+		.string()
+		.regex(/^\d{4}-\d{2}-\d{2}$/)
+		.optional(),
+	ignoredRequestId: z.uuid().optional(),
+});
 
 export async function requestRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().get(
@@ -178,6 +187,7 @@ export async function requestRouter(app: FastifyInstance) {
 			preHandler: [verifyJwt, authorize([USER_ROLES[0], USER_ROLES[1]])],
 			schema: {
 				params: requestVehicleIdParamSchema,
+				querystring: vehicleScheduleQuerySchema,
 				response: {
 					200: requestScheduleResponseSchema.array(),
 				},
@@ -186,6 +196,7 @@ export async function requestRouter(app: FastifyInstance) {
 		async (request, reply) => {
 			const schedule = await fetchVehicleScheduleUseCase(
 				request.params.vehicleId,
+				request.query,
 			);
 
 			return reply.status(200).send(schedule);

@@ -15,6 +15,10 @@ import { updateVehicle } from "@/use-cases/vehicles/update-vehicle";
 
 const availableVehiclesQuerySchema = z
 	.object({
+		date: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/)
+			.optional(),
 		ignoredRequestId: z.uuid().optional(),
 		predictedEndDate: z.coerce.date().optional(),
 		predictedStartDate: z.coerce.date().optional(),

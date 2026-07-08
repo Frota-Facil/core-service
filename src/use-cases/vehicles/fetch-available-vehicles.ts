@@ -10,6 +10,7 @@ import {
 } from "@/domains/vehicles/db/repository";
 
 type FetchAvailableVehiclesInput = {
+	date?: string;
 	ignoredRequestId?: string;
 	predictedEndDate?: Date;
 	predictedStartDate?: Date;
@@ -19,7 +20,9 @@ export async function fetchAvailableVehicles(
 	input: FetchAvailableVehiclesInput = {},
 ): Promise<vehicleResponseDTO[]> {
 	if (!input.predictedStartDate && !input.predictedEndDate) {
-		const foundVehicles = await fetchAllAvailable();
+		const foundVehicles = input.date
+			? await fetchAllRequestableForSchedule()
+			: await fetchAllAvailable();
 
 		return foundVehicles.map((vehicle) => vehicleResponseSchema.parse(vehicle));
 	}

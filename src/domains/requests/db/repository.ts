@@ -416,6 +416,76 @@ export async function findActiveOrFutureScheduleByVehicleId(
 
 	return foundSchedules;
 }
+
+export async function findBusyScheduleByVehicleIdAndPeriod(params: {
+	vehicleId: string;
+	periodStartDate: Date;
+	periodEndDate: Date;
+	ignoredRequestId?: string;
+}): Promise<
+	{
+		predictedStartDate: Date;
+		predictedEndDate: Date;
+	}[]
+> {
+	const foundSchedules = await db
+		.select({
+			requestStatus: requests.status,
+			requestStartDate: requests.predictedStartDate,
+			requestEndDate: requests.predictedEndDate,
+			routeStatus: routes.status,
+			routeStartedAt: routes.startedAt,
+			routeFinishedAt: routes.finishedAt,
+		})
+		.from(requests)
+		.leftJoin(routes, eq(routes.requestId, requests.id))
+		.where(
+			and(
+				eq(requests.vehicleId, params.vehicleId),
+				params.ignoredRequestId
+					? ne(requests.id, params.ignoredRequestId)
+					: undefined,
+				or(
+					and(
+						inArray(requests.status, [
+							REQUEST_STATUS.PENDING,
+							REQUEST_STATUS.APPROVED,
+						]),
+						lt(requests.predictedStartDate, params.periodEndDate),
+						gt(requests.predictedEndDate, params.periodStartDate),
+					),
+					and(
+						eq(requests.status, REQUEST_STATUS.COMPLETED),
+						eq(routes.status, ROUTE_STATUS.FINISHED),
+						isNotNull(routes.startedAt),
+						isNotNull(routes.finishedAt),
+						lt(routes.startedAt, params.periodEndDate),
+						gt(routes.finishedAt, params.periodStartDate),
+					),
+				),
+			),
+		);
+
+	return foundSchedules.map((schedule) => {
+		if (
+			schedule.requestStatus === REQUEST_STATUS.COMPLETED &&
+			schedule.routeStatus === ROUTE_STATUS.FINISHED &&
+			schedule.routeStartedAt &&
+			schedule.routeFinishedAt
+		) {
+			return {
+				predictedStartDate: schedule.routeStartedAt,
+				predictedEndDate: schedule.routeFinishedAt,
+			};
+		}
+
+		return {
+			predictedStartDate: schedule.requestStartDate,
+			predictedEndDate: schedule.requestEndDate,
+		};
+	});
+}
+
 export async function fetchRequests(): Promise<Request[]> {
 	const foundRequests = await db.select().from(requests);
 
