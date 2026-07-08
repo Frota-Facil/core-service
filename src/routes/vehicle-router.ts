@@ -8,6 +8,7 @@ import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import { deleteVehicle } from "@/use-cases/vehicles/delete-vehicle";
+import { fetchAvailableVehicles } from "@/use-cases/vehicles/fetch-available-vehicles";
 import { fetchVehicles } from "@/use-cases/vehicles/fetch-vehicles";
 import { registerVehicle } from "@/use-cases/vehicles/register-vehicle";
 import { updateVehicle } from "@/use-cases/vehicles/update-vehicle";
@@ -45,6 +46,22 @@ export async function vehicleRouter(app: FastifyInstance) {
 			const vehicle = await registerVehicle(request.body, request.user.id); //request.body -> dados do veículo, request.user.id -> id do admin que está criando
 
 			return reply.status(201).send(vehicle);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().get(
+		"/vehicles/available",
+		{
+			preHandler: [verifyJwt, authorize([USER_ROLES[0], USER_ROLES[1]])],
+			schema: {
+				response: {
+					200: vehicleResponseSchema.array(),
+				},
+			},
+		},
+		async (_, reply) => {
+			const vehicles = await fetchAvailableVehicles();
+			return reply.status(200).send(vehicles);
 		},
 	);
 

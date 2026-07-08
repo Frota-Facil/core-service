@@ -32,6 +32,7 @@ export async function authenticateAdmin(
 			id: foundUser.id,
 			name: foundUser.name,
 			email: foundUser.email,
+			photoUrl: foundUser.photoUrl,
 			role: foundUser.role,
 		},
 	};

@@ -8,6 +8,7 @@ export const createUserSchema = z.object({
 	cpf: z.string().min(11).max(11),
 	cnh: z.string().min(11).max(11).optional(),
 	phone: z.string().min(10).max(14),
+	photoUrl: z.string().nullable().optional(),
 	department: z.string().optional(),
 	role: z.enum(USER_ROLES).default(USER_ROLES[0]),
 });

@@ -8,6 +8,7 @@ export const updateUserSchema = z.object({
 	cpf: z.string().min(11).max(11).optional(),
 	cnh: z.string().min(11).max(11).optional(),
 	phone: z.string().min(10).max(14).optional(),
+	photoUrl: z.string().nullable().optional(),
 	department: z.string().optional(),
 	role: z.enum(USER_ROLES).optional(),
 });

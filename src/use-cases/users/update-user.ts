@@ -48,6 +48,7 @@ export async function updateUserUseCase(
 		cpf: input.cpf,
 		cnh: input.cnh,
 		phone: input.phone,
+		photoUrl: input.photoUrl,
 		department: input.department,
 		role: input.role,
 	};

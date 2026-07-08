@@ -10,15 +10,18 @@ import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import jwtPlugin from "@/plugins/jwt";
 import rabbitPlugin from "@/plugins/rabbitmq";
+import { auditLogRouter } from "@/routes/audit-log-router";
 import { authRouter } from "@/routes/auth-router";
+import { notificationRouter } from "@/routes/notification-router";
+import { pushTokenRouter } from "@/routes/push-token-router";
+import { reportRouter } from "@/routes/report-router";
 import { requestRouter } from "@/routes/request-router";
+import { routeEventRouter } from "@/routes/route-event-router";
 import { routeRouter } from "@/routes/route-router";
 import { trackRouter } from "@/routes/track-router";
 import { uploadRouter } from "@/routes/upload-router";
 import { userRouter } from "@/routes/user-router";
 import { vehicleRouter } from "@/routes/vehicle-router";
-import { reportRouter } from "@/routes/report-router";
-import { notificationRouter } from "@/routes/notification-router";
 
 export const app = fastify({
 	logger: {
@@ -36,7 +39,7 @@ app.setSerializerCompiler(serializerCompiler);
 
 app.register(fastifyCors, {
 	origin: true,
-	methods: ["GET", "POST", "PUT", "DELETE"],
+	methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
 	credentials: true,
 });
 
@@ -47,9 +50,12 @@ app.register(vehicleRouter);
 app.register(authRouter);
 app.register(uploadRouter);
 app.register(requestRouter);
+app.register(routeEventRouter);
 app.register(routeRouter);
 app.register(trackRouter);
 app.register(notificationRouter);
+app.register(pushTokenRouter);
+app.register(auditLogRouter);
 
 app.register(reportRouter);
 

@@ -33,6 +33,7 @@ export async function authenticate(
 			id: foundUser.id,
 			name: foundUser.name,
 			email: foundUser.email,
+			photoUrl: foundUser.photoUrl,
 			role: foundUser.role,
 		},
 	};

@@ -1,7 +1,14 @@
+export const ROUTE_STATUS = {
+	PENDING: "PENDING",
+	READY: "READY",
+	STARTED: "STARTED",
+	FINISHED: "FINISHED",
+} as const;
+
 export const ROUTES_STATUSES = [
-	"PENDING",
-	"READY",
-	"STARTED",
-	"FINISHED",
+	ROUTE_STATUS.PENDING,
+	ROUTE_STATUS.READY,
+	ROUTE_STATUS.STARTED,
+	ROUTE_STATUS.FINISHED,
 ] as const;
 export type routeStatuses = (typeof ROUTES_STATUSES)[number];

@@ -1,56 +1,164 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
+
+import { adminRouteResponseSchema } from "@/contracts/routes/admin-route-response-schema";
 import { finishRouteSchema } from "@/contracts/routes/finish-route-schema";
 import {
 	requestIdParamSchema,
 	routeIdParamSchema,
 } from "@/contracts/routes/route-params-schema";
+import { tripResponseSchema } from "@/contracts/routes/trip-response-schema";
+import { routeDetailResponseSchema } from "@/contracts/routes/route-detail-response-schema";
 import { routeResponseSchema } from "@/contracts/routes/route-response-schema";
 import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
+import { fetchMyTripUseCase } from "@/use-cases/routes/fetch-my-trip";
+import { fetchMyTripsUseCase } from "@/use-cases/routes/fetch-my-trips";
+import { fetchRouteDetailUseCase } from "@/use-cases/routes/fetch-route-detail";
+import { fetchRoutesUseCase } from "@/use-cases/routes/fetch-routes";
 import { finishRouteUseCase } from "@/use-cases/routes/finish-route";
-import { startRouteUseCase } from "@/use-cases/routes/start-route";
+import {
+	startRouteByRequestIdUseCase,
+	startRouteUseCase,
+} from "@/use-cases/routes/start-route";
 
 export async function routeRouter(app: FastifyInstance) {
-	app.withTypeProvider<ZodTypeProvider>().post(
-		"/routes/:requestId",
+	app.withTypeProvider<ZodTypeProvider>().get(
+		"/admin/routes",
 		{
-			preHandler: [verifyJwt, authorize([USER_ROLES[0], USER_ROLES[1]])],
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
 			schema: {
-				params: requestIdParamSchema,
 				response: {
-					201: routeResponseSchema,
+					200: adminRouteResponseSchema.array(),
+				},
+			},
+		},
+		async (_, reply) => {
+			const routes = await fetchRoutesUseCase();
+
+			return reply.status(200).send(routes);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().get(
+		"/admin/routes/:routeId",
+		{
+			preHandler: [verifyJwt, authorize([USER_ROLES[1]])],
+			schema: {
+				params: routeIdParamSchema,
+				response: {
+					200: routeDetailResponseSchema,
 				},
 			},
 		},
 		async (request, reply) => {
-			const route = await startRouteUseCase(request.params.requestId,request.user.id,);
+			const route = await fetchRouteDetailUseCase(request.params.routeId);
 
-			return reply.status(201).send(route);
+			return reply.status(200).send(route);
 		},
 	);
 
-	app.withTypeProvider<ZodTypeProvider>().put(
-		"/routes/:routeId",
+	app.withTypeProvider<ZodTypeProvider>().post(
+		"/routes/:requestId",
 		{
-			preHandler: [verifyJwt, authorize([USER_ROLES[0], USER_ROLES[1]])],
+			preHandler: [verifyJwt],
+			schema: {
+				params: requestIdParamSchema,
+				response: {
+					200: tripResponseSchema,
+				},
+			},
+		},
+		async (request, reply) => {
+			const trip = await startRouteByRequestIdUseCase(
+				request.params.requestId,
+				request.user.id,
+			);
+
+			return reply.status(200).send(trip);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().get(
+		"/me/trips",
+		{
+			preHandler: [verifyJwt],
+			schema: {
+				response: {
+					200: tripResponseSchema.array(),
+				},
+			},
+		},
+		async (request, reply) => {
+			const trips = await fetchMyTripsUseCase(request.user.id);
+
+			return reply.status(200).send(trips);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().get(
+		"/me/trips/:routeId",
+		{
+			preHandler: [verifyJwt],
+			schema: {
+				params: routeIdParamSchema,
+				response: {
+					200: tripResponseSchema,
+				},
+			},
+		},
+		async (request, reply) => {
+			const trip = await fetchMyTripUseCase(
+				request.params.routeId,
+				request.user.id,
+			);
+
+			return reply.status(200).send(trip);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().patch(
+		"/me/trips/:routeId/start",
+		{
+			preHandler: [verifyJwt],
+			schema: {
+				params: routeIdParamSchema,
+				response: {
+					200: tripResponseSchema,
+				},
+			},
+		},
+		async (request, reply) => {
+			const trip = await startRouteUseCase(
+				request.params.routeId,
+				request.user.id,
+			);
+
+			return reply.status(200).send(trip);
+		},
+	);
+
+	app.withTypeProvider<ZodTypeProvider>().patch(
+		"/me/trips/:routeId/finish",
+		{
+			preHandler: [verifyJwt],
 			schema: {
 				params: routeIdParamSchema,
 				body: finishRouteSchema,
 				response: {
-					200: routeResponseSchema,
+					200: tripResponseSchema,
 				},
 			},
 		},
 		async (request, reply) => {
-			const route = await finishRouteUseCase(
+			const trip = await finishRouteUseCase(
 				request.params.routeId,
 				request.body,
 				request.user.id,
 			);
 
-			return reply.status(200).send(route);
+			return reply.status(200).send(trip);
 		},
 	);
 }

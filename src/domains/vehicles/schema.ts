@@ -1,5 +1,6 @@
 import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import {
+	VEHICLE_STATUS,
 	VEHICLE_STATUSES,
 	type vehicleStatuses,
 } from "@/domains/vehicles/status";
@@ -24,7 +25,7 @@ export const vehicles = pgTable("vehicles", {
 	status: text("status", { enum: VEHICLE_STATUSES })
 		.notNull()
 		.$type<vehicleStatuses>()
-		.default(VEHICLE_STATUSES[0]),
+		.default(VEHICLE_STATUS.AVAILABLE),
 
 	type: text("type", { enum: VEHICLE_TYPES })
 		.notNull()

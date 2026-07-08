@@ -71,6 +71,34 @@
       "when": 1781113139430,
       "tag": "0009_tired_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782089028166,
+      "tag": "0010_warm_power_pack",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1782176646910,
+      "tag": "0011_stormy_photon",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1782178295158,
+      "tag": "0012_legal_justin_hammer",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1783208931868,
+      "tag": "0013_right_xavin",
+      "breakpoints": true
     }
   ]
 }
