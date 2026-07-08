@@ -6,6 +6,7 @@ import {
 import { findRouteById } from "@/domains/routes/db/repository";
 import { RouteNotFoundError } from "@/domains/routes/errors";
 import { insertTrack } from "@/domains/tracks/db/repository";
+import { publishTrackCreatedEvent } from "@/use-cases/route-event-service";
 
 export async function createTrackUseCase(
 	input: CreateTrackDTO,
@@ -21,6 +22,13 @@ export async function createTrackUseCase(
 		xCoordinate: input.xCoordinate,
 		yCoordinate: input.yCoordinate,
 	});
+	const trackResponse = trackResponseSchema.parse(track);
 
-	return trackResponseSchema.parse(track);
+	publishTrackCreatedEvent({
+		type: "track.created",
+		routeId: trackResponse.routeId,
+		track: trackResponse,
+	});
+
+	return trackResponse;
 }
