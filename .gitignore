@@ -109,3 +109,4 @@ backend/*.sqlite
 *.tar.gz
 .cache/
 tmp/
+backups/
