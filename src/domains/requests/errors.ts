@@ -8,7 +8,7 @@ export const RequestNotFoundError = createError(
 
 export const VehicleAlreadyScheduledError = createError(
 	"VehicleAlreadyScheduledError",
-	"Veículo já está agendado para esse período",
+	"Este veículo já possui uma solicitação ou rota neste horário. Escolha outro veículo ou outro horário.",
 	400,
 );
 

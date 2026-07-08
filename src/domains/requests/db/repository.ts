@@ -159,22 +159,35 @@ export async function findVehicleScheduleConflict(params: {
 	predictedStartDate: Date;
 	predictedEndDate: Date;
 	ignoredRequestId?: string;
-}): Promise<Request | undefined> {
+}): Promise<{ id: string } | undefined> {
 	const [request] = await db
-		.select()
+		.select({ id: requests.id })
 		.from(requests)
+		.leftJoin(routes, eq(routes.requestId, requests.id))
 		.where(
 			and(
 				eq(requests.vehicleId, params.vehicleId),
-				inArray(requests.status, [
-					REQUEST_STATUS.PENDING,
-					REQUEST_STATUS.APPROVED,
-				]),
 				params.ignoredRequestId
 					? ne(requests.id, params.ignoredRequestId)
 					: undefined,
-				lt(requests.predictedStartDate, params.predictedEndDate),
-				gt(requests.predictedEndDate, params.predictedStartDate),
+				or(
+					and(
+						inArray(requests.status, [
+							REQUEST_STATUS.PENDING,
+							REQUEST_STATUS.APPROVED,
+						]),
+						lt(requests.predictedStartDate, params.predictedEndDate),
+						gt(requests.predictedEndDate, params.predictedStartDate),
+					),
+					and(
+						eq(requests.status, REQUEST_STATUS.COMPLETED),
+						eq(routes.status, ROUTE_STATUS.FINISHED),
+						isNotNull(routes.startedAt),
+						isNotNull(routes.finishedAt),
+						lt(routes.startedAt, params.predictedEndDate),
+						gt(routes.finishedAt, params.predictedStartDate),
+					),
+				),
 			),
 		)
 		.limit(1);
@@ -454,18 +467,31 @@ async function findVehicleScheduleConflictInTransaction(
 	const [request] = await tx
 		.select({ id: requests.id })
 		.from(requests)
+		.leftJoin(routes, eq(routes.requestId, requests.id))
 		.where(
 			and(
 				eq(requests.vehicleId, params.vehicleId),
-				inArray(requests.status, [
-					REQUEST_STATUS.PENDING,
-					REQUEST_STATUS.APPROVED,
-				]),
 				params.ignoredRequestId
 					? ne(requests.id, params.ignoredRequestId)
 					: undefined,
-				lt(requests.predictedStartDate, params.predictedEndDate),
-				gt(requests.predictedEndDate, params.predictedStartDate),
+				or(
+					and(
+						inArray(requests.status, [
+							REQUEST_STATUS.PENDING,
+							REQUEST_STATUS.APPROVED,
+						]),
+						lt(requests.predictedStartDate, params.predictedEndDate),
+						gt(requests.predictedEndDate, params.predictedStartDate),
+					),
+					and(
+						eq(requests.status, REQUEST_STATUS.COMPLETED),
+						eq(routes.status, ROUTE_STATUS.FINISHED),
+						isNotNull(routes.startedAt),
+						isNotNull(routes.finishedAt),
+						lt(routes.startedAt, params.predictedEndDate),
+						gt(routes.finishedAt, params.predictedStartDate),
+					),
+				),
 			),
 		)
 		.limit(1);

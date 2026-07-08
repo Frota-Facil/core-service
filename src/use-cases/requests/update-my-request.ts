@@ -20,7 +20,7 @@ import {
 	VehicleNotAvailableError,
 	VehicleNotFoundError,
 } from "@/domains/vehicles/errors";
-import { VEHICLE_STATUS } from "@/domains/vehicles/status";
+import { isVehicleRequestableForSchedule } from "@/domains/vehicles/status";
 
 export async function updateMyRequestUseCase(
 	userId: string,
@@ -54,7 +54,7 @@ export async function updateMyRequestUseCase(
 		throw new VehicleNotFoundError();
 	}
 
-	if (input.vehicleId && vehicle.status !== VEHICLE_STATUS.AVAILABLE) {
+	if (!isVehicleRequestableForSchedule(vehicle.status)) {
 		throw new VehicleNotAvailableError();
 	}
 
