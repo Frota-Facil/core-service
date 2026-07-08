@@ -11,7 +11,7 @@ import {
 export const vehicles = pgTable("vehicles", {
 	id: uuid("id").primaryKey().defaultRandom(),
 
-	plate: text("plate").notNull().unique(),
+	plate: text("plate").notNull().unique(), //Melhor colocar como int e colocar máscara
 
 	model: text("model").notNull(),
 

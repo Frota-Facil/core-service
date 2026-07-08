@@ -4,6 +4,7 @@
 	"main": "index.js",
 	"scripts": {
 		"dev": "tsx watch src/server.ts",
+		"test": "vitest run",
 		"build": "tsc --project tsconfig.json && tsc-alias",
 		"start": "node dist/server.js",
 		"db:generate": "drizzle-kit generate",
@@ -23,7 +24,8 @@
 		"drizzle-kit": "^0.31.10",
 		"tsc-alias": "^1.8.16",
 		"tsx": "^4.21.0",
-		"typescript": "^6.0.2"
+		"typescript": "^6.0.2",
+		"vitest": "^4.1.10"
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.1041.0",

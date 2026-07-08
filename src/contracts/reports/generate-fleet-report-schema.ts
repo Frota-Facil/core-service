@@ -12,3 +12,11 @@ export const fleetReportResponseSchema = z.object({
 });
 
 export type FleetReportResponseDTO = z.infer<typeof fleetReportResponseSchema>;
+
+export const generatedMarkdownReportResponseSchema = z.object({
+	markdown_content: z.string(),
+});
+
+export type GeneratedMarkdownReportResponseDTO = z.infer<
+	typeof generatedMarkdownReportResponseSchema
+>;
