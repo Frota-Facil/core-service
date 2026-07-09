@@ -9,6 +9,7 @@ import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";
 import jwtPlugin from "@/plugins/jwt";
+import { setupMetrics } from "@/plugins/metrics";
 import rabbitPlugin from "@/plugins/rabbitmq";
 import { auditLogRouter } from "@/routes/audit-log-router";
 import { authRouter } from "@/routes/auth-router";
@@ -44,6 +45,8 @@ app.register(fastifyCors, {
 });
 
 app.register(jwtPlugin);
+
+setupMetrics(app);
 
 app.register(userRouter);
 app.register(vehicleRouter);
