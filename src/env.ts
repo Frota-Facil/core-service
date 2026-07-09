@@ -18,6 +18,10 @@ const envSchema = z.object({
 	MINIO_ADMIN_HOST: z.string().min(1).default("localhost"),
 	MINIO_PORT: z.coerce.number().default(9000),
 	MINIO_BUCKET: z.string().min(1),
+	LOCATIONIQ_API_KEY: z.preprocess(
+		(value) => (value === "" ? undefined : value),
+		z.string().min(1).optional(),
+	),
 
 	AI_REPORT_SERVICE_URL: z
 		.string()

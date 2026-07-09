@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { createTrackUseCase } from "@/use-cases/tracks/create-track";
 import { getChannel } from "@/messaging/client";
 import { QUEUES } from "@/messaging/queues";
+import { createTrackUseCase } from "@/use-cases/tracks/create-track";
 
 const trackingCoordinatesUpdatedSchema = z.preprocess(
 	(payload) => {
@@ -13,17 +13,21 @@ const trackingCoordinatesUpdatedSchema = z.preprocess(
 
 		return {
 			routeId: data.routeId ?? data.route_id,
-			xCoordinate: data.xCoordinate ?? data.x_coordinate,
-			yCoordinate: data.yCoordinate ?? data.y_coordinate,
-			createdAt: data.createdAt ?? data.created_at, 
+			latitude: data.latitude ?? data.xCoordinate ?? data.x_coordinate,
+			longitude: data.longitude ?? data.yCoordinate ?? data.y_coordinate,
+			capturedAt:
+				data.capturedAt ??
+				data.captured_at ??
+				data.createdAt ??
+				data.created_at,
 		};
 	},
 	z.object({
-	routeId: z.uuid(),
-	xCoordinate: z.number(),
-	yCoordinate: z.number(),
-	createdAt: z.coerce.date(),
-})
+		routeId: z.uuid(),
+		latitude: z.number().min(-90).max(90),
+		longitude: z.number().min(-180).max(180),
+		capturedAt: z.coerce.date().optional(),
+	}),
 );
 
 export async function consumeTrackingCoordinatesUpdated() {
@@ -38,18 +42,17 @@ export async function consumeTrackingCoordinatesUpdated() {
 
 		try {
 			const payload = JSON.parse(message.content.toString("utf8"));
-			
-			console.table(payload);
 			const data = trackingCoordinatesUpdatedSchema.parse(payload);
 
 			await createTrackUseCase(data);
 
-			
-
 			ch.ack(message);
 		} catch (error) {
 			if (error instanceof SyntaxError || error instanceof z.ZodError) {
-				console.error("Mensagem inválida em tracking.coordinates.updated", error);
+				console.error(
+					"Mensagem inválida em tracking.coordinates.updated",
+					error,
+				);
 				ch.ack(message);
 				return;
 			}
