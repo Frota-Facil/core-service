@@ -1,4 +1,10 @@
-import { integer, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	doublePrecision,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { routes } from "@/domains/routes/schema";
 
 export const tracks = pgTable("tracks", {
@@ -10,9 +16,15 @@ export const tracks = pgTable("tracks", {
 			onDelete: "cascade",
 		}),
 
-	xCoordinate: integer("x_coordinate").notNull(),
+	latitude: doublePrecision("latitude").notNull(),
 
-	yCoordinate: integer("y_coordinate").notNull(),
+	longitude: doublePrecision("longitude").notNull(),
+
+	capturedAt: timestamp("captured_at").defaultNow().notNull(),
+
+	imageUrl: text("image_url"),
+
+	imageKey: text("image_key"),
 
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 

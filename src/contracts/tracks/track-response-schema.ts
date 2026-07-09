@@ -3,8 +3,11 @@ import { z } from "zod";
 export const trackResponseSchema = z.object({
 	id: z.uuid(),
 	routeId: z.uuid(),
-	xCoordinate: z.number().int(),
-	yCoordinate: z.number().int(),
+	latitude: z.number(),
+	longitude: z.number(),
+	capturedAt: z.date(),
+	imageUrl: z.string().nullable(),
+	imageKey: z.string().nullable(),
 	createdAt: z.date(),
 	updatedAt: z.date(),
 });

@@ -95,8 +95,11 @@ type AiRouteReportPayload = {
 	tracks: {
 		id: string;
 		route_id: string;
-		x_coordinate: number;
-		y_coordinate: number;
+		latitude: number;
+		longitude: number;
+		captured_at?: string | null;
+		image_url?: string | null;
+		image_key?: string | null;
 		created_at?: string | null;
 		updated_at?: string | null;
 	}[];

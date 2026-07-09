@@ -68,8 +68,11 @@ export async function generateRouteReportUseCase(
 		tracks: tracks.map((track) => ({
 			id: track.id,
 			route_id: track.routeId,
-			x_coordinate: track.xCoordinate,
-			y_coordinate: track.yCoordinate,
+			latitude: track.latitude,
+			longitude: track.longitude,
+			captured_at: track.capturedAt.toISOString(),
+			image_url: track.imageUrl,
+			image_key: track.imageKey,
 			created_at: track.createdAt.toISOString(),
 			updated_at: track.updatedAt.toISOString(),
 		})),
