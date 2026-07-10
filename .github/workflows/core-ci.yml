@@ -15,6 +15,18 @@ jobs:
   test-and-lint:
     runs-on: ubuntu-latest
 
+    env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+          JWT_SECRET: test_secret
+          RABBITMQ_DEFAULT_USER: test_user
+          RABBITMQ_DEFAULT_PASS: test_password
+          MINIO_ROOT_USER: test_user
+          MINIO_ROOT_PASSWORD: test_password
+          MINIO_HOST: localhost
+          MINIO_BUCKET: test_bucket
+
     steps:
       - name: Baixar código
         uses: actions/checkout@v4
