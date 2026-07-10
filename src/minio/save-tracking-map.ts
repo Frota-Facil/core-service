@@ -14,18 +14,21 @@ type SaveTrackingMapOutput = {
 	imageUrl: string;
 };
 
+const JPEG_SIGNATURE = [0xff, 0xd8, 0xff] as const;
+
 export async function saveTrackingMapToMinio({
 	imageBuffer,
 	routeId,
 	trackId,
 }: SaveTrackingMapInput): Promise<SaveTrackingMapOutput> {
-	const imageKey = `tracks/${routeId}/${trackId}.png`;
+	const imageFormat = getImageFormat(imageBuffer);
+	const imageKey = `tracks/${routeId}/${trackId}.${imageFormat.extension}`;
 
 	const command = new PutObjectCommand({
 		Bucket: env.MINIO_BUCKET,
 		Key: imageKey,
 		Body: imageBuffer,
-		ContentType: "image/png",
+		ContentType: imageFormat.contentType,
 	});
 
 	await s3.send(command);
@@ -35,4 +38,22 @@ export async function saveTrackingMapToMinio({
 		imageKey,
 		imageUrl: `${MINIO_ADMIN_URL}/${env.MINIO_BUCKET}/${imageKey}`,
 	};
+}
+
+function getImageFormat(imageBuffer: Buffer) {
+	if (isJpegBuffer(imageBuffer)) {
+		return {
+			contentType: "image/jpeg",
+			extension: "jpg",
+		};
+	}
+
+	return {
+		contentType: "image/png",
+		extension: "png",
+	};
+}
+
+function isJpegBuffer(buffer: Buffer): boolean {
+	return JPEG_SIGNATURE.every((byte, index) => buffer[index] === byte);
 }
