@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, type SQL } from "drizzle-orm";
+import { and, asc, eq, gte, lte, type SQL } from "drizzle-orm";
 import { requests } from "@/domains/requests/schema";
 import { routes } from "@/domains/routes/schema";
 import { tracks } from "@/domains/tracks/schema";
@@ -60,7 +60,8 @@ export async function fetchRouteReportData(routeId: string) {
 	const foundTracks = await db
 		.select()
 		.from(tracks)
-		.where(eq(tracks.routeId, routeId));
+		.where(eq(tracks.routeId, route.id))
+		.orderBy(asc(tracks.capturedAt), asc(tracks.createdAt));
 
 	return {
 		route,

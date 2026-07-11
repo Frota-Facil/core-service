@@ -129,6 +129,7 @@ export type RouteWithRequestDetails = Route & {
 		vehicle: {
 			id: string;
 			model: string;
+			plate: string;
 		};
 	};
 };
@@ -185,6 +186,7 @@ export async function findRouteWithRequestDetailsById(
 			vehicle: {
 				id: vehicles.id,
 				model: vehicles.model,
+				plate: vehicles.plate,
 			},
 		})
 		.from(routes)

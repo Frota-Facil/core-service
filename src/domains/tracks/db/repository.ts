@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { tracks } from "@/domains/tracks/schema";
 import { db } from "@/drizzle/client";
 
@@ -12,10 +12,26 @@ export async function insertTrack(
 	return track;
 }
 
+export async function updateTrackImageById(
+	id: string,
+	data: Pick<typeof tracks.$inferInsert, "imageKey" | "imageUrl">,
+): Promise<Track | undefined> {
+	const [track] = await db
+		.update(tracks)
+		.set({
+			...data,
+			updatedAt: new Date(),
+		})
+		.where(eq(tracks.id, id))
+		.returning();
+
+	return track;
+}
+
 export async function findTracksByRouteId(routeId: string): Promise<Track[]> {
 	return db
 		.select()
 		.from(tracks)
 		.where(eq(tracks.routeId, routeId))
-		.orderBy(asc(tracks.createdAt));
+		.orderBy(desc(tracks.capturedAt));
 }

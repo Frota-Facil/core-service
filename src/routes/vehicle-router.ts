@@ -13,6 +13,36 @@ import { fetchVehicles } from "@/use-cases/vehicles/fetch-vehicles";
 import { registerVehicle } from "@/use-cases/vehicles/register-vehicle";
 import { updateVehicle } from "@/use-cases/vehicles/update-vehicle";
 
+const availableVehiclesQuerySchema = z
+	.object({
+		date: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/)
+			.optional(),
+		ignoredRequestId: z.uuid().optional(),
+		predictedEndDate: z.coerce.date().optional(),
+		predictedStartDate: z.coerce.date().optional(),
+	})
+	.refine(
+		(data) =>
+			(!data.predictedStartDate && !data.predictedEndDate) ||
+			(Boolean(data.predictedStartDate) && Boolean(data.predictedEndDate)),
+		{
+			message: "Informe início e término para verificar disponibilidade",
+			path: ["predictedEndDate"],
+		},
+	)
+	.refine(
+		(data) =>
+			!data.predictedStartDate ||
+			!data.predictedEndDate ||
+			data.predictedEndDate > data.predictedStartDate,
+		{
+			message: "A data final deve ser maior que a data inicial",
+			path: ["predictedEndDate"],
+		},
+	);
+
 export async function vehicleRouter(app: FastifyInstance) {
 	app.withTypeProvider<ZodTypeProvider>().get(
 		"/admin/vehicles",
@@ -54,13 +84,14 @@ export async function vehicleRouter(app: FastifyInstance) {
 		{
 			preHandler: [verifyJwt, authorize([USER_ROLES[0], USER_ROLES[1]])],
 			schema: {
+				querystring: availableVehiclesQuerySchema,
 				response: {
 					200: vehicleResponseSchema.array(),
 				},
 			},
 		},
-		async (_, reply) => {
-			const vehicles = await fetchAvailableVehicles();
+		async (request, reply) => {
+			const vehicles = await fetchAvailableVehicles(request.query);
 			return reply.status(200).send(vehicles);
 		},
 	);

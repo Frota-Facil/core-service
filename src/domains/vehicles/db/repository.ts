@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { vehicles } from "@/domains/vehicles/schema";
 import { VEHICLE_STATUS } from "@/domains/vehicles/status";
 import { db } from "@/drizzle/client";
@@ -16,6 +16,20 @@ export async function fetchAllAvailable(): Promise<Vehicle[]> {
 		.select()
 		.from(vehicles)
 		.where(eq(vehicles.status, VEHICLE_STATUS.AVAILABLE));
+
+	return foundVehicles;
+}
+
+export async function fetchAllRequestableForSchedule(): Promise<Vehicle[]> {
+	const foundVehicles = await db
+		.select()
+		.from(vehicles)
+		.where(
+			inArray(vehicles.status, [
+				VEHICLE_STATUS.AVAILABLE,
+				VEHICLE_STATUS.IN_USE,
+			]),
+		);
 
 	return foundVehicles;
 }

@@ -1,6 +1,34 @@
 import "dotenv/config";
 import { z } from "zod";
 
+const optionalEnvString = z.preprocess(
+	(value) => (value === "" ? undefined : value),
+	z.string().min(1).optional(),
+);
+
+const mapImageProviderSchema = z.preprocess(
+	(value) =>
+		typeof value === "string" && value.trim()
+			? value.trim().toLowerCase()
+			: undefined,
+	z.enum(["locationiq", "mapbox", "google"]).default("locationiq"),
+);
+
+const mapImageStyleSchema = z.preprocess(
+	(value) =>
+		typeof value === "string" && value.trim()
+			? value.trim().toLowerCase()
+			: undefined,
+	z
+		.enum(["streets", "light", "dark", "satellite", "hybrid", "roadmap"])
+		.default("streets"),
+);
+
+const mapImageZoomSchema = z.preprocess(
+	(value) => (value === "" ? undefined : value),
+	z.coerce.number().int().min(0).max(22).default(15),
+);
+
 const envSchema = z.object({
 	POSTGRES_USER: z.string().min(1),
 	POSTGRES_PASSWORD: z.string().min(1),
@@ -18,6 +46,12 @@ const envSchema = z.object({
 	MINIO_ADMIN_HOST: z.string().min(1).default("localhost"),
 	MINIO_PORT: z.coerce.number().default(9000),
 	MINIO_BUCKET: z.string().min(1),
+	LOCATIONIQ_API_KEY: optionalEnvString,
+	MAP_IMAGE_PROVIDER: mapImageProviderSchema,
+	MAP_IMAGE_STYLE: mapImageStyleSchema,
+	MAP_IMAGE_ZOOM: mapImageZoomSchema,
+	MAPBOX_ACCESS_TOKEN: optionalEnvString,
+	GOOGLE_MAPS_API_KEY: optionalEnvString,
 
 	AI_REPORT_SERVICE_URL: z
 		.string()

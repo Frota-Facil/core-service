@@ -13,16 +13,20 @@ const trackingCoordinatesUpdatedSchema = z.preprocess(
 
 		return {
 			routeId: data.routeId ?? data.route_id,
-			xCoordinate: data.xCoordinate ?? data.x_coordinate,
-			yCoordinate: data.yCoordinate ?? data.y_coordinate,
-			createdAt: data.createdAt ?? data.created_at,
+			latitude: data.latitude ?? data.xCoordinate ?? data.x_coordinate,
+			longitude: data.longitude ?? data.yCoordinate ?? data.y_coordinate,
+			capturedAt:
+				data.capturedAt ??
+				data.captured_at ??
+				data.createdAt ??
+				data.created_at,
 		};
 	},
 	z.object({
 		routeId: z.uuid(),
-		xCoordinate: z.number(),
-		yCoordinate: z.number(),
-		createdAt: z.coerce.date(),
+		latitude: z.number().min(-90).max(90),
+		longitude: z.number().min(-180).max(180),
+		capturedAt: z.coerce.date().optional(),
 	}),
 );
 
@@ -38,8 +42,6 @@ export async function consumeTrackingCoordinatesUpdated() {
 
 		try {
 			const payload = JSON.parse(message.content.toString("utf8"));
-
-			console.table(payload);
 			const data = trackingCoordinatesUpdatedSchema.parse(payload);
 
 			await createTrackUseCase(data);

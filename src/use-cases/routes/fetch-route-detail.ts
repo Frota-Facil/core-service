@@ -5,6 +5,7 @@ import {
 import { findRouteWithRequestDetailsById } from "@/domains/routes/db/repository";
 import { RouteNotFoundError } from "@/domains/routes/errors";
 import { findTracksByRouteId } from "@/domains/tracks/db/repository";
+import { findUserById } from "@/domains/users/db/repository";
 
 export async function fetchRouteDetailUseCase(
 	routeId: string,
@@ -16,9 +17,21 @@ export async function fetchRouteDetailUseCase(
 	}
 
 	const tracks = await findTracksByRouteId(routeId);
+	const approvedByUser = route.request.approvedBy
+		? await findUserById(route.request.approvedBy)
+		: null;
 
 	return routeDetailResponseSchema.parse({
 		...route,
+		request: {
+			...route.request,
+			approvedByUser: approvedByUser
+				? {
+						id: approvedByUser.id,
+						name: approvedByUser.name,
+					}
+				: null,
+		},
 		tracks,
 	});
 }

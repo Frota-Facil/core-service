@@ -18,7 +18,7 @@ import {
 	VehicleNotAvailableError,
 	VehicleNotFoundError,
 } from "@/domains/vehicles/errors";
-import { VEHICLE_STATUS } from "@/domains/vehicles/status";
+import { isVehicleRequestableForSchedule } from "@/domains/vehicles/status";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { notifyAdminsAboutNewRequest } from "@/use-cases/notification-service";
 
@@ -42,7 +42,7 @@ export async function createRequestUseCase(
 		throw new VehicleNotFoundError();
 	}
 
-	if (vehicle.status !== VEHICLE_STATUS.AVAILABLE) {
+	if (!isVehicleRequestableForSchedule(vehicle.status)) {
 		throw new VehicleNotAvailableError();
 	}
 

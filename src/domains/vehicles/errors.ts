@@ -13,6 +13,6 @@ export const VehicleNotFoundError = createError(
 );
 export const VehicleNotAvailableError = createError(
 	"VehicleNotAvailableError",
-	"Veículo não está disponível",
+	"Este veículo não está disponível para solicitações.",
 	400,
 );
