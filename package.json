@@ -5,6 +5,7 @@
 	"scripts": {
 		"dev": "tsx watch src/server.ts",
 		"test": "vitest run",
+		"lint": "biome check",
 		"build": "tsc --project tsconfig.json && tsc-alias",
 		"start": "node dist/server.js",
 		"db:generate": "drizzle-kit generate",

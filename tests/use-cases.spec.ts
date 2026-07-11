@@ -29,6 +29,7 @@ vi.mock("@/domains/vehicles/db/repository", () => ({
 }));
 
 vi.mock("@/domains/requests/db/repository", () => ({
+	approveRequestWithScheduleChecks: vi.fn(),
 	fetchRequests: vi.fn(),
 	findActiveOrFutureRequestsByUserId: vi.fn(),
 	findActiveOrFutureScheduleByVehicleId: vi.fn(),
@@ -36,14 +37,18 @@ vi.mock("@/domains/requests/db/repository", () => ({
 	findRequestsByVehicleId: vi.fn(),
 	findVehicleScheduleConflict: vi.fn(),
 	insertRequest: vi.fn(),
+	insertRequestWithScheduleChecks: vi.fn(),
 	updateRequestById: vi.fn(),
 }));
 
 vi.mock("@/domains/routes/db/repository", () => ({
 	findRouteById: vi.fn(),
 	findRouteByRequestId: vi.fn(),
+	findTripByIdAndUserId: vi.fn(),
 	insertRoute: vi.fn(),
+	startRouteForUserIfAvailable: vi.fn(),
 	updateRouteById: vi.fn(),
+	updateRouteVehicleAndRequestStatusById: vi.fn(),
 }));
 
 vi.mock("@/domains/tracks/db/repository", () => ({
@@ -79,18 +84,28 @@ vi.mock("@/use-cases/notifications/create-request-notification", () => ({
 	createRequestRejectedNotificationUseCase: vi.fn(),
 }));
 
+vi.mock("@/use-cases/push-notification-service", () => ({
+	sendPushNotificationToUser: vi.fn(),
+}));
+
+vi.mock("@/use-cases/route-event-service", () => ({
+	publishRouteStartedEvent: vi.fn(),
+	publishTrackCreatedEvent: vi.fn(),
+}));
+
 import { fetchRouteReportData } from "@/domains/reports/db/repository";
 import {
+	approveRequestWithScheduleChecks,
 	findRequestById,
-	findVehicleScheduleConflict,
-	insertRequest,
+	insertRequestWithScheduleChecks,
 	updateRequestById,
 } from "@/domains/requests/db/repository";
 import {
 	findRouteById,
-	findRouteByRequestId,
-	insertRoute,
+	findTripByIdAndUserId,
+	startRouteForUserIfAvailable,
 	updateRouteById,
+	updateRouteVehicleAndRequestStatusById,
 } from "@/domains/routes/db/repository";
 import {
 	findTracksByRouteId,
@@ -125,11 +140,13 @@ import {
 	createRequestApprovedNotificationUseCase,
 	createRequestRejectedNotificationUseCase,
 } from "@/use-cases/notifications/create-request-notification";
+import { sendPushNotificationToUser } from "@/use-cases/push-notification-service";
 import { generateFleetReportUseCase } from "@/use-cases/reports/generate-fleet-report";
 import { generateRouteReportUseCase } from "@/use-cases/reports/generate-route-report";
 import { approveRequestUseCase } from "@/use-cases/requests/approve-request";
 import { createRequestUseCase } from "@/use-cases/requests/create-request";
 import { rejectRequestUseCase } from "@/use-cases/requests/reject-request";
+import { publishRouteStartedEvent } from "@/use-cases/route-event-service";
 import { finishRouteUseCase } from "@/use-cases/routes/finish-route";
 import { startRouteUseCase } from "@/use-cases/routes/start-route";
 import { createTrackUseCase } from "@/use-cases/tracks/create-track";
@@ -159,6 +176,7 @@ function makeUser(overrides = {}) {
 		cpf: "12345678901",
 		cnh: "12345678900",
 		phone: "85999999999",
+		photoUrl: null,
 		department: "Operacoes",
 		role: USER_ROLES[0],
 		passwordHash: "hash",
@@ -193,6 +211,7 @@ function makeRequest(overrides = {}) {
 		status: REQUEST_STATUSES[0],
 		predictedStartDate: new Date("2026-02-01T10:00:00.000Z"),
 		predictedEndDate: new Date("2026-02-01T12:00:00.000Z"),
+		destination: "Campus Benfica",
 		reason: "Visita tecnica",
 		createdAt,
 		updatedAt,
@@ -211,6 +230,25 @@ function makeRoute(overrides = {}) {
 		finishedAt: null,
 		createdAt,
 		updatedAt,
+		...overrides,
+	};
+}
+
+function makeTrip(overrides = {}) {
+	return {
+		id: ids.route,
+		requestId: ids.request,
+		routeStatus: ROUTES_STATUSES[1],
+		requestStatus: REQUEST_STATUSES[1],
+		description: null,
+		reportMarkdown: null,
+		startedAt: null,
+		finishedAt: null,
+		predictedStartDate: new Date("2026-02-01T10:00:00.000Z"),
+		predictedEndDate: new Date("2026-02-01T12:00:00.000Z"),
+		destination: "Campus Benfica",
+		reason: "Visita tecnica",
+		vehicle: makeVehicle(),
 		...overrides,
 	};
 }
@@ -469,8 +507,7 @@ describe("solicitacoes", () => {
 		const request = makeRequest();
 		vi.mocked(findUserById).mockResolvedValue(makeUser());
 		vi.mocked(findVehicleById).mockResolvedValue(makeVehicle());
-		vi.mocked(findVehicleScheduleConflict).mockResolvedValue(undefined);
-		vi.mocked(insertRequest).mockResolvedValue(request);
+		vi.mocked(insertRequestWithScheduleChecks).mockResolvedValue({ request });
 
 		const result = await createRequestUseCase(
 			{
@@ -478,17 +515,19 @@ describe("solicitacoes", () => {
 				vehicleId: ids.vehicle,
 				predictedStartDate: request.predictedStartDate,
 				predictedEndDate: request.predictedEndDate,
+				destination: request.destination,
 				reason: request.reason,
 			},
 			ids.user,
 		);
 
-		expect(insertRequest).toHaveBeenCalledWith({
+		expect(insertRequestWithScheduleChecks).toHaveBeenCalledWith({
 			userId: ids.user,
 			vehicleId: ids.vehicle,
 			status: "PENDING",
 			predictedStartDate: request.predictedStartDate,
 			predictedEndDate: request.predictedEndDate,
+			destination: request.destination,
 			reason: request.reason,
 		});
 		expect(createAuditLog).toHaveBeenCalledWith({
@@ -509,6 +548,7 @@ describe("solicitacoes", () => {
 				vehicleId: ids.vehicle,
 				predictedStartDate: sameDate,
 				predictedEndDate: sameDate,
+				destination: "Campus Benfica",
 				reason: "Visita tecnica",
 			}),
 		).rejects.toThrow("A data final deve ser maior que a data inicial");
@@ -516,17 +556,20 @@ describe("solicitacoes", () => {
 	});
 
 	it("aprova solicitacao pendente, registra auditoria, notifica e retorna atualizada", async () => {
-		vi.mocked(findRequestById).mockResolvedValue(makeRequest());
-		vi.mocked(updateRequestById).mockResolvedValue(
-			makeRequest({ status: REQUEST_STATUSES[1], approvedBy: ids.admin }),
-		);
+		vi.mocked(approveRequestWithScheduleChecks).mockResolvedValue({
+			status: "approved",
+			request: makeRequest({
+				status: REQUEST_STATUSES[1],
+				approvedBy: ids.admin,
+			}),
+		});
 
 		const result = await approveRequestUseCase(ids.request, ids.admin);
 
-		expect(updateRequestById).toHaveBeenCalledWith(ids.request, {
-			status: "APPROVED",
-			approvedBy: ids.admin,
-		});
+		expect(approveRequestWithScheduleChecks).toHaveBeenCalledWith(
+			ids.request,
+			ids.admin,
+		);
 		expect(createAuditLog).toHaveBeenCalledWith({
 			action: "REQUEST.APPROVED",
 			entityId: ids.request,
@@ -536,18 +579,27 @@ describe("solicitacoes", () => {
 			ids.request,
 		);
 		expect(notifyDriverAboutRequestApproved).toHaveBeenCalledWith(ids.request);
+		expect(sendPushNotificationToUser).toHaveBeenCalledWith({
+			userId: ids.user,
+			title: "Solicitação aprovada",
+			body: "Sua solicitação de veículo foi aprovada.",
+			data: {
+				requestId: ids.request,
+				type: "REQUEST_APPROVED",
+			},
+		});
 		expect(result.status).toBe("APPROVED");
 	});
 
 	it("impede aprovar solicitacao que nao esta pendente", async () => {
-		vi.mocked(findRequestById).mockResolvedValue(
-			makeRequest({ status: REQUEST_STATUSES[1] }),
-		);
+		vi.mocked(approveRequestWithScheduleChecks).mockResolvedValue({
+			status: "not_pending",
+		});
 
 		await expect(approveRequestUseCase(ids.request, ids.admin)).rejects.toThrow(
 			"A solicitação não está pendente",
 		);
-		expect(updateRequestById).not.toHaveBeenCalled();
+		expect(createAuditLog).not.toHaveBeenCalled();
 	});
 
 	it("rejeita solicitacao pendente e dispara notificacoes de recusa", async () => {
@@ -565,57 +617,95 @@ describe("solicitacoes", () => {
 			ids.request,
 		);
 		expect(notifyDriverAboutRequestRejected).toHaveBeenCalledWith(ids.request);
+		expect(sendPushNotificationToUser).toHaveBeenCalledWith({
+			userId: ids.user,
+			title: "Solicitação recusada",
+			body: "Sua solicitação de veículo foi recusada.",
+			data: {
+				requestId: ids.request,
+				type: "REQUEST_REJECTED",
+			},
+		});
 		expect(result.status).toBe("REJECTED");
 	});
 });
 
 describe("rotas", () => {
 	it("inicia rota somente para solicitacao aprovada e sem rota existente", async () => {
-		vi.mocked(findRequestById).mockResolvedValue(
-			makeRequest({ status: REQUEST_STATUSES[1] }),
-		);
-		vi.mocked(findRouteByRequestId).mockResolvedValue(undefined);
-		vi.mocked(insertRoute).mockResolvedValue(makeRoute());
+		const trip = makeTrip();
+		const startedAt = new Date("2026-02-01T10:05:00.000Z");
+		vi.mocked(findTripByIdAndUserId).mockResolvedValue(trip);
+		vi.mocked(startRouteForUserIfAvailable).mockResolvedValue({
+			status: "started",
+			route: makeRoute({
+				status: ROUTES_STATUSES[2],
+				startedAt,
+			}),
+			trip,
+		});
+		vi.mocked(findUserById).mockResolvedValue(makeUser());
+		vi.mocked(findVehicleById).mockResolvedValue(makeVehicle());
 
-		const result = await startRouteUseCase(ids.request, ids.user);
+		const result = await startRouteUseCase(ids.route, ids.user);
 
-		expect(insertRoute).toHaveBeenCalledWith({
-			requestId: ids.request,
-			status: "STARTED",
-			description: null,
-			startedAt: expect.any(Date),
+		expect(startRouteForUserIfAvailable).toHaveBeenCalledWith({
+			routeId: ids.route,
+			userId: ids.user,
+			vehicleId: ids.vehicle,
+			routeData: {
+				status: "STARTED",
+				startedAt: expect.any(Date),
+			},
+			vehicleStatus: "IN_USE",
 		});
 		expect(createAuditLog).toHaveBeenCalledWith({
 			action: "TRIP.STARTED",
 			entityId: ids.route,
 			performedBy: ids.user,
 		});
-		expect(result.status).toBe("STARTED");
+		expect(publishRouteStartedEvent).toHaveBeenCalledWith({
+			type: "route.started",
+			routeId: ids.route,
+			vehicle: {
+				id: ids.vehicle,
+				model: "Fiat Toro",
+			},
+			driver: {
+				id: ids.user,
+				name: "Sara Driver",
+			},
+			startedAt: startedAt.toISOString(),
+		});
+		expect(result.routeStatus).toBe("STARTED");
+		expect(result.vehicle.status).toBe("IN_USE");
 	});
 
 	it("bloqueia inicio quando solicitacao ainda nao foi aprovada", async () => {
-		vi.mocked(findRequestById).mockResolvedValue(makeRequest());
+		vi.mocked(findTripByIdAndUserId).mockResolvedValue(
+			makeTrip({ requestStatus: REQUEST_STATUSES[0] }),
+		);
 
-		await expect(startRouteUseCase(ids.request, ids.user)).rejects.toThrow(
+		await expect(startRouteUseCase(ids.route, ids.user)).rejects.toThrow(
 			"A solicitação ainda não foi aprovada",
 		);
-		expect(insertRoute).not.toHaveBeenCalled();
+		expect(startRouteForUserIfAvailable).not.toHaveBeenCalled();
 	});
 
-	it("finaliza rota iniciada, remove reportMarkdown da resposta e agenda geracao de relatorio", async () => {
-		vi.mocked(findRouteById).mockResolvedValue(makeRoute());
-		vi.mocked(updateRouteById)
-			.mockResolvedValueOnce(
-				makeRoute({
-					status: ROUTES_STATUSES[3],
-					description: "Finalizada sem ocorrencias",
-					finishedAt: new Date("2026-02-01T12:00:00.000Z"),
-					reportMarkdown: "# Relatorio antigo",
-				}),
-			)
-			.mockResolvedValueOnce(
-				makeRoute({ status: ROUTES_STATUSES[3], reportMarkdown: "# Novo" }),
-			);
+	it("finaliza rota iniciada, retorna trip atualizada e agenda geracao de relatorio", async () => {
+		vi.mocked(findTripByIdAndUserId).mockResolvedValue(
+			makeTrip({ routeStatus: ROUTES_STATUSES[2] }),
+		);
+		vi.mocked(updateRouteVehicleAndRequestStatusById).mockResolvedValue(
+			makeRoute({
+				status: ROUTES_STATUSES[3],
+				description: "Finalizada sem ocorrencias",
+				finishedAt: new Date("2026-02-01T12:00:00.000Z"),
+				reportMarkdown: "# Relatorio antigo",
+			}),
+		);
+		vi.mocked(updateRouteById).mockResolvedValue(
+			makeRoute({ status: ROUTES_STATUSES[3], reportMarkdown: "# Novo" }),
+		);
 		vi.mocked(fetchRouteReportData).mockResolvedValue({
 			route: makeRoute({ status: ROUTES_STATUSES[3] }),
 			request: makeRequest(),
@@ -636,12 +726,19 @@ describe("rotas", () => {
 			expect(requestRouteReportFromAiService).toHaveBeenCalled(),
 		);
 
-		expect(updateRouteById).toHaveBeenNthCalledWith(1, ids.route, {
-			status: "FINISHED",
-			description: "Finalizada sem ocorrencias",
-			finishedAt: expect.any(Date),
+		expect(updateRouteVehicleAndRequestStatusById).toHaveBeenCalledWith({
+			routeId: ids.route,
+			vehicleId: ids.vehicle,
+			requestId: ids.request,
+			routeData: {
+				status: "FINISHED",
+				description: "Finalizada sem ocorrencias",
+				finishedAt: expect.any(Date),
+			},
+			vehicleStatus: "AVAILABLE",
+			requestStatus: "COMPLETED",
 		});
-		expect(updateRouteById).toHaveBeenLastCalledWith(ids.route, {
+		expect(updateRouteById).toHaveBeenCalledWith(ids.route, {
 			reportMarkdown: "# Novo",
 		});
 		expect(createAuditLog).toHaveBeenCalledWith({
@@ -649,19 +746,20 @@ describe("rotas", () => {
 			entityId: ids.route,
 			performedBy: ids.user,
 		});
-		expect(result).not.toHaveProperty("reportMarkdown");
-		expect(result.status).toBe("FINISHED");
+		expect(result.routeStatus).toBe("FINISHED");
+		expect(result.requestStatus).toBe("COMPLETED");
+		expect(result.vehicle.status).toBe("AVAILABLE");
 	});
 
 	it("impede finalizar rota que nao esta iniciada", async () => {
-		vi.mocked(findRouteById).mockResolvedValue(
-			makeRoute({ status: ROUTES_STATUSES[1] }),
+		vi.mocked(findTripByIdAndUserId).mockResolvedValue(
+			makeTrip({ routeStatus: ROUTES_STATUSES[1] }),
 		);
 
 		await expect(
 			finishRouteUseCase(ids.route, { description: "fim" }, ids.user),
 		).rejects.toThrow("A rota ainda não foi iniciada ou já foi finalizada");
-		expect(updateRouteById).not.toHaveBeenCalled();
+		expect(updateRouteVehicleAndRequestStatusById).not.toHaveBeenCalled();
 	});
 });
 

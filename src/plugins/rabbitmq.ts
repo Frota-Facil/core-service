@@ -1,6 +1,6 @@
 import fp from "fastify-plugin";
-import { startRabbitConsumers } from "@/messaging/consumers";
 import { connectRabbit } from "@/messaging/client";
+import { startRabbitConsumers } from "@/messaging/consumers";
 import { setupRabbit } from "@/messaging/setup";
 
 export default fp(async () => {
