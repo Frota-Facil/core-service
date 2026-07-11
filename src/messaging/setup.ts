@@ -21,13 +21,13 @@ export async function setupRabbit() {
 
 	await ch.assertExchange(EXCHANGES.TRACKING, "topic", {
 		durable: true,
-	})
+	});
 
 	await ch.bindQueue(
 		QUEUES.TRACKING_COORDINATES_UPDATED,
 		EXCHANGES.TRACKING,
 		ROUTING_KEYS.TRACKING_COORDINATES_UPDATED,
-	)
+	);
 
 	await ch.bindQueue(
 		QUEUES.NOTIFICATION_SOLICITATION_CREATED,

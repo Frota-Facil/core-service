@@ -16,18 +16,18 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-          POSTGRES_USER: postgres-dev
-          POSTGRES_PASSWORD: postgres-dev
-          POSTGRES_DB: sif-dev
-          JWT_SECRET: test_secret
+      POSTGRES_USER: postgres-dev
+      POSTGRES_PASSWORD: postgres-dev
+      POSTGRES_DB: sif-dev
+      JWT_SECRET: test_secret
 
-          RABBITMQ_DEFAULT_USER: admin
-          RABBITMQ_DEFAULT_PASS: admin
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
 
-          MINIO_ROOT_USER: minioadmin
-          MINIO_ROOT_PASSWORD: minioadmin
-          MINIO_HOST: minio-dev
-          MINIO_BUCKET: sif_dev
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_HOST: minio-dev
+      MINIO_BUCKET: sif_dev
 
     steps:
       - name: Baixar código
@@ -44,6 +44,9 @@ jobs:
 
       - name: Rodar testes
         run: npm run test
+
+      - name: Verificar build
+        run: npm run build
 
       - name: Verificar lint
         run: npm run lint

@@ -3,13 +3,12 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import { adminRouteResponseSchema } from "@/contracts/routes/admin-route-response-schema";
 import { finishRouteSchema } from "@/contracts/routes/finish-route-schema";
+import { routeDetailResponseSchema } from "@/contracts/routes/route-detail-response-schema";
 import {
 	requestIdParamSchema,
 	routeIdParamSchema,
 } from "@/contracts/routes/route-params-schema";
 import { tripResponseSchema } from "@/contracts/routes/trip-response-schema";
-import { routeDetailResponseSchema } from "@/contracts/routes/route-detail-response-schema";
-import { routeResponseSchema } from "@/contracts/routes/route-response-schema";
 import { USER_ROLES } from "@/domains/users/roles";
 import { authorize } from "@/hooks/authorize";
 import { verifyJwt } from "@/hooks/verify-jwt";

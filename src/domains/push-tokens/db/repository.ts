@@ -40,8 +40,5 @@ export async function createOrUpdatePushToken({
 export async function fetchPushTokensByUserId(
 	userId: string,
 ): Promise<PushToken[]> {
-	return db
-		.select()
-		.from(pushTokens)
-		.where(eq(pushTokens.userId, userId));
+	return db.select().from(pushTokens).where(eq(pushTokens.userId, userId));
 }
