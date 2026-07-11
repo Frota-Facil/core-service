@@ -37,7 +37,9 @@ export async function fetchRoutesUseCase(): Promise<AdminRouteResponseDTO[]> {
 				driver: route.driver,
 				duration: formatRouteDuration(route),
 				destination: route.request.destination,
+				finishedAt: route.finishedAt,
 				reason: route.request.reason,
+				startedAt: route.startedAt,
 				status: route.status,
 			}),
 		);

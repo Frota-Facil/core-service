@@ -16,7 +16,9 @@ export const adminRouteResponseSchema = z.object({
 	}),
 	duration: z.string().nullable(),
 	destination: z.string(),
+	finishedAt: z.date().nullish(),
 	reason: z.string(),
+	startedAt: z.date().nullish(),
 	status: z.enum(ROUTES_STATUSES),
 });
 
