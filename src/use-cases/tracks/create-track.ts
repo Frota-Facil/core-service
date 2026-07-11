@@ -11,7 +11,7 @@ import {
 	updateTrackImageById,
 } from "@/domains/tracks/db/repository";
 import { saveTrackingMapToMinio } from "@/minio/save-tracking-map";
-import { generateLocationIqStaticMap } from "@/services/locationiq-static-map-service";
+import { generateTrackingStaticMap } from "@/services/locationiq-static-map-service";
 import { publishTrackCreatedEvent } from "@/use-cases/route-event-service";
 
 export async function createTrackUseCase(
@@ -33,7 +33,7 @@ export async function createTrackUseCase(
 	});
 
 	try {
-		const imageBuffer = await generateLocationIqStaticMap({
+		const imageBuffer = await generateTrackingStaticMap({
 			latitude: input.latitude,
 			longitude: input.longitude,
 		});
