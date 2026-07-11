@@ -97,11 +97,11 @@ type AiRouteReportPayload = {
 		route_id: string;
 		latitude: number;
 		longitude: number;
-		captured_at?: string | null;
-		image_url?: string | null;
-		image_key?: string | null;
-		created_at?: string | null;
-		updated_at?: string | null;
+		captured_at: string;
+		image_url: string | null;
+		image_key: string | null;
+		created_at: string;
+		updated_at: string;
 	}[];
 	extra_context?: string;
 	metadata: Record<string, unknown>;

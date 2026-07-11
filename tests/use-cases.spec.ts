@@ -49,6 +49,7 @@ vi.mock("@/domains/routes/db/repository", () => ({
 vi.mock("@/domains/tracks/db/repository", () => ({
 	findTracksByRouteId: vi.fn(),
 	insertTrack: vi.fn(),
+	updateTrackImageById: vi.fn(),
 }));
 
 vi.mock("@/domains/notifications/db/repository", () => ({
@@ -218,8 +219,11 @@ function makeTrack(overrides = {}) {
 	return {
 		id: ids.track,
 		routeId: ids.route,
-		xCoordinate: 10,
-		yCoordinate: 20,
+		latitude: -3.7319,
+		longitude: -38.5267,
+		capturedAt: new Date("2026-02-01T10:15:00.000Z"),
+		imageUrl: null,
+		imageKey: null,
 		createdAt,
 		updatedAt,
 		...overrides,
@@ -668,14 +672,16 @@ describe("tracks e relatorios", () => {
 
 		const result = await createTrackUseCase({
 			routeId: ids.route,
-			xCoordinate: 10,
-			yCoordinate: 20,
+			latitude: -3.7319,
+			longitude: -38.5267,
 		});
 
 		expect(insertTrack).toHaveBeenCalledWith({
+			id: expect.any(String),
 			routeId: ids.route,
-			xCoordinate: 10,
-			yCoordinate: 20,
+			latitude: -3.7319,
+			longitude: -38.5267,
+			capturedAt: expect.any(Date),
 		});
 		expect(result.id).toBe(ids.track);
 	});
@@ -712,12 +718,25 @@ describe("tracks e relatorios", () => {
 	});
 
 	it("monta payload normalizado e retorna markdown gerado pela IA", async () => {
+		const firstTrack = makeTrack({
+			id: ids.track,
+			capturedAt: new Date("2026-02-01T10:15:00.000Z"),
+			imageUrl: "https://storage.example.com/tracks/1.png",
+			imageKey: "tracks/route/1.png",
+		});
+		const secondTrack = makeTrack({
+			id: "77777777-7777-4777-8777-777777777777",
+			latitude: -3.735,
+			longitude: -38.53,
+			capturedAt: new Date("2026-02-01T11:45:00.000Z"),
+		});
+
 		vi.mocked(fetchRouteReportData).mockResolvedValue({
 			route: makeRoute({ finishedAt: new Date("2026-02-01T12:00:00.000Z") }),
 			request: makeRequest(),
 			user: makeUser(),
 			vehicle: makeVehicle(),
-			tracks: [makeTrack()],
+			tracks: [firstTrack, secondTrack],
 		});
 		vi.mocked(requestRouteReportFromAiService).mockResolvedValue({
 			markdown_content: "# Relatorio da rota",
@@ -732,10 +751,37 @@ describe("tracks e relatorios", () => {
 					started_at: "2026-02-01T10:05:00.000Z",
 					finished_at: "2026-02-01T12:00:00.000Z",
 				}),
+				tracks: [
+					{
+						id: ids.track,
+						route_id: ids.route,
+						latitude: -3.7319,
+						longitude: -38.5267,
+						captured_at: "2026-02-01T10:15:00.000Z",
+						image_url: "https://storage.example.com/tracks/1.png",
+						image_key: "tracks/route/1.png",
+						created_at: createdAt.toISOString(),
+						updated_at: updatedAt.toISOString(),
+					},
+					{
+						id: "77777777-7777-4777-8777-777777777777",
+						route_id: ids.route,
+						latitude: -3.735,
+						longitude: -38.53,
+						captured_at: "2026-02-01T11:45:00.000Z",
+						image_url: null,
+						image_key: null,
+						created_at: createdAt.toISOString(),
+						updated_at: updatedAt.toISOString(),
+					},
+				],
 				metadata: {
 					source: "core-service",
 					report_type: "route",
-					total_tracks: 1,
+					total_tracks: 2,
+					duration_minutes: 115,
+					first_track_time: "2026-02-01T10:15:00.000Z",
+					last_track_time: "2026-02-01T11:45:00.000Z",
 				},
 			}),
 		);

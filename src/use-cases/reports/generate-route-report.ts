@@ -6,6 +6,79 @@ function toISOStringOrNull(date: Date | null): string | null {
 	return date ? date.toISOString() : null;
 }
 
+type RouteReportData = NonNullable<
+	Awaited<ReturnType<typeof fetchRouteReportData>>
+>;
+type RouteReportRoute = RouteReportData["route"];
+type RouteReportTrack = RouteReportData["tracks"][number];
+
+function calculateDurationMinutes(
+	startedAt: Date | null,
+	finishedAt: Date | null,
+): number | undefined {
+	if (!startedAt || !finishedAt) {
+		return undefined;
+	}
+
+	const durationInMs = finishedAt.getTime() - startedAt.getTime();
+
+	if (durationInMs < 0) {
+		return undefined;
+	}
+
+	return Math.round((durationInMs / 60_000) * 100) / 100;
+}
+
+function buildRouteReportMetadata(
+	route: RouteReportRoute,
+	tracks: RouteReportTrack[],
+): Record<string, unknown> {
+	const metadata: Record<string, unknown> = {
+		source: "core-service",
+		report_type: "route",
+		total_tracks: tracks.length,
+	};
+
+	const durationMinutes = calculateDurationMinutes(
+		route.startedAt,
+		route.finishedAt,
+	);
+
+	if (durationMinutes !== undefined) {
+		metadata.duration_minutes = durationMinutes;
+	}
+
+	const capturedTimes = tracks
+		.map((track) => track.capturedAt)
+		.sort((a, b) => a.getTime() - b.getTime());
+	const firstTrackTime = capturedTimes[0];
+	const lastTrackTime = capturedTimes.at(-1);
+
+	if (firstTrackTime) {
+		metadata.first_track_time = firstTrackTime.toISOString();
+	}
+
+	if (lastTrackTime) {
+		metadata.last_track_time = lastTrackTime.toISOString();
+	}
+
+	return metadata;
+}
+
+function normalizeTrackForAiService(track: RouteReportTrack) {
+	return {
+		id: track.id,
+		route_id: track.routeId,
+		latitude: track.latitude,
+		longitude: track.longitude,
+		captured_at: track.capturedAt.toISOString(),
+		image_url: track.imageUrl,
+		image_key: track.imageKey,
+		created_at: track.createdAt.toISOString(),
+		updated_at: track.updatedAt.toISOString(),
+	};
+}
+
 export async function generateRouteReportUseCase(
 	routeId: string,
 ): Promise<string> {
@@ -65,26 +138,12 @@ export async function generateRouteReportUseCase(
 				}
 			: undefined,
 
-		tracks: tracks.map((track) => ({
-			id: track.id,
-			route_id: track.routeId,
-			latitude: track.latitude,
-			longitude: track.longitude,
-			captured_at: track.capturedAt.toISOString(),
-			image_url: track.imageUrl,
-			image_key: track.imageKey,
-			created_at: track.createdAt.toISOString(),
-			updated_at: track.updatedAt.toISOString(),
-		})),
+		tracks: tracks.map(normalizeTrackForAiService),
 
 		extra_context:
 			"Gere um relatório administrativo desta rota finalizada, considerando a solicitação, o veículo, a descrição final e os pontos de track registrados.",
 
-		metadata: {
-			source: "core-service",
-			report_type: "route",
-			total_tracks: tracks.length,
-		},
+		metadata: buildRouteReportMetadata(route, tracks),
 	};
 
 	const generatedReport = await requestRouteReportFromAiService(payload);
