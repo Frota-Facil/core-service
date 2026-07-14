@@ -78,11 +78,15 @@ function getMinioPublicUrl() {
 		return removeTrailingSlashes(publicUrl);
 	}
 
-	if (process.env.NODE_ENV === "development") {
+	if (
+		process.env.NODE_ENV === "development" ||
+		process.env.NODE_ENV === "test" ||
+		process.env.CI === "true"
+	) {
 		return "http://localhost:9000";
 	}
 
-	throw new Error("MINIO_PUBLIC_URL is required outside development");
+	throw new Error("MINIO_PUBLIC_URL is required outside development/test/CI");
 }
 
 function removeTrailingSlashes(url: string) {
