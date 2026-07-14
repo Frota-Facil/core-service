@@ -68,3 +68,23 @@ export const RABBITMQ_AMQP_URL = `amqp://${env.RABBITMQ_DEFAULT_USER}:${env.RABB
 export const MINIO_URL = `http://${env.MINIO_HOST}:${env.MINIO_PORT}`;
 
 export const MINIO_ADMIN_URL = `http://${env.MINIO_ADMIN_HOST}:${env.MINIO_PORT}`;
+
+export const MINIO_PUBLIC_URL = getMinioPublicUrl();
+
+function getMinioPublicUrl() {
+	const publicUrl = process.env.MINIO_PUBLIC_URL?.trim();
+
+	if (publicUrl) {
+		return removeTrailingSlashes(publicUrl);
+	}
+
+	if (process.env.NODE_ENV === "development") {
+		return "http://localhost:9000";
+	}
+
+	throw new Error("MINIO_PUBLIC_URL is required outside development");
+}
+
+function removeTrailingSlashes(url: string) {
+	return url.replace(/\/+$/, "");
+}
