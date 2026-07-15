@@ -38,6 +38,8 @@ const envSchema = z.object({
 	RABBITMQ_AMQP_HOST: z.string().default("localhost"),
 	RABBITMQ_AMQP_PORT: z.coerce.number().default(5672),
 	JWT_SECRET: z.string().min(1),
+	GOOGLE_CLIENT_ID: optionalEnvString,
+	GOOGLE_CLIENT_IDS: optionalEnvString,
 	RABBITMQ_DEFAULT_USER: z.string().min(1),
 	RABBITMQ_DEFAULT_PASS: z.string().min(1),
 	MINIO_ROOT_USER: z.string().min(1),
@@ -60,6 +62,17 @@ const envSchema = z.object({
 });
 
 export const env = envSchema.parse(process.env);
+
+export function getGoogleClientIds() {
+	const clientIds = [
+		env.GOOGLE_CLIENT_ID,
+		...(env.GOOGLE_CLIENT_IDS?.split(",") ?? []),
+	]
+		.map((clientId) => clientId?.trim())
+		.filter((clientId): clientId is string => Boolean(clientId));
+
+	return [...new Set(clientIds)];
+}
 
 export const DATABASE_URL = `postgres://${env.POSTGRES_USER}:${env.POSTGRES_PASSWORD}@${env.POSTGRES_HOST}:${env.POSTGRES_PORT}/${env.POSTGRES_DB}`;
 

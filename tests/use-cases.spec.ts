@@ -1,3 +1,4 @@
+import { generateKeyPairSync, sign as signJwt } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { REQUEST_STATUSES } from "@/domains/requests/status";
@@ -128,9 +129,14 @@ import {
 	updateVehicle as updateVehicleRepository,
 } from "@/domains/vehicles/db/repository";
 import { requestRouteReportFromAiService } from "@/services/ai-report-service";
+import {
+	assertGoogleIdTokenPayload,
+	GoogleJwtIdTokenVerifier,
+} from "@/services/google-id-token-verifier";
 import { createAuditLog } from "@/use-cases/audit-log-service";
 import { authenticate } from "@/use-cases/authenticate";
 import { authenticateAdmin } from "@/use-cases/authenticate-admin";
+import { authenticateWithGoogle } from "@/use-cases/authenticate-with-google";
 import {
 	notifyAdminsAboutNewRequest,
 	notifyDriverAboutRequestApproved,
@@ -268,8 +274,41 @@ function makeTrack(overrides = {}) {
 	};
 }
 
+function createSignedGoogleIdToken(payload: Record<string, unknown>) {
+	const { privateKey, publicKey } = generateKeyPairSync("rsa", {
+		modulusLength: 2048,
+	});
+	const kid = "google-test-key";
+	const encodedHeader = encodeJwtPart({ alg: "RS256", kid });
+	const encodedPayload = encodeJwtPart(payload);
+	const signingInput = `${encodedHeader}.${encodedPayload}`;
+	const encodedSignature = signJwt(
+		"RSA-SHA256",
+		Buffer.from(signingInput),
+		privateKey,
+	).toString("base64url");
+
+	return {
+		jwk: {
+			...publicKey.export({ format: "jwk" }),
+			alg: "RS256",
+			kid,
+			use: "sig",
+		},
+		token: `${signingInput}.${encodedSignature}`,
+	};
+}
+
+function encodeJwtPart(value: unknown) {
+	return Buffer.from(JSON.stringify(value)).toString("base64url");
+}
+
 const tokenService = {
 	sign: vi.fn(() => "signed-token"),
+	verify: vi.fn(),
+};
+
+const googleTokenVerifier = {
 	verify: vi.fn(),
 };
 
@@ -336,6 +375,175 @@ describe("autenticacao", () => {
 			role: "admin",
 		});
 		expect(result.user.role).toBe("admin");
+	});
+
+	it("autentica via Google quando token valido pertence a usuario existente", async () => {
+		googleTokenVerifier.verify.mockResolvedValue({
+			audience: "google-client-id",
+			email: "sara@example.com",
+			emailVerified: true,
+			expiresAt: 1893456000,
+			issuer: "https://accounts.google.com",
+			sub: "google-sub",
+		});
+		vi.mocked(findUserByEmail).mockResolvedValue(makeUser());
+
+		const result = await authenticateWithGoogle(
+			{ idToken: "google-id-token" },
+			tokenService,
+			googleTokenVerifier,
+			["google-client-id"],
+		);
+
+		expect(googleTokenVerifier.verify).toHaveBeenCalledWith("google-id-token", [
+			"google-client-id",
+		]);
+		expect(findUserByEmail).toHaveBeenCalledWith("sara@example.com");
+		expect(tokenService.sign).toHaveBeenCalledWith({
+			id: ids.user,
+			role: "driver",
+		});
+		expect(result).toMatchObject({
+			token: "signed-token",
+			user: { id: ids.user, email: "sara@example.com", role: "driver" },
+		});
+	});
+
+	it("rejeita Google quando nao existe usuario cadastrado com o email validado", async () => {
+		googleTokenVerifier.verify.mockResolvedValue({
+			audience: "google-client-id",
+			email: "missing@example.com",
+			emailVerified: true,
+			expiresAt: 1893456000,
+			issuer: "https://accounts.google.com",
+			sub: "google-sub",
+		});
+		vi.mocked(findUserByEmail).mockResolvedValue(undefined);
+
+		await expect(
+			authenticateWithGoogle(
+				{ idToken: "google-id-token" },
+				tokenService,
+				googleTokenVerifier,
+				["google-client-id"],
+			),
+		).rejects.toThrow("Credenciais inválidas");
+		expect(tokenService.sign).not.toHaveBeenCalled();
+	});
+
+	it("rejeita Google quando email do token nao foi verificado", async () => {
+		googleTokenVerifier.verify.mockResolvedValue({
+			audience: "google-client-id",
+			email: "sara@example.com",
+			emailVerified: false,
+			expiresAt: 1893456000,
+			issuer: "https://accounts.google.com",
+			sub: "google-sub",
+		});
+
+		await expect(
+			authenticateWithGoogle(
+				{ idToken: "google-id-token" },
+				tokenService,
+				googleTokenVerifier,
+				["google-client-id"],
+			),
+		).rejects.toThrow("Token do Google inválido");
+		expect(findUserByEmail).not.toHaveBeenCalled();
+		expect(tokenService.sign).not.toHaveBeenCalled();
+	});
+
+	it("rejeita Google quando audience nao foi configurada", async () => {
+		await expect(
+			authenticateWithGoogle(
+				{ idToken: "google-id-token" },
+				tokenService,
+				googleTokenVerifier,
+				[],
+			),
+		).rejects.toThrow("Google Sign-In não configurado");
+		expect(googleTokenVerifier.verify).not.toHaveBeenCalled();
+	});
+});
+
+describe("validacao do id token do Google", () => {
+	const nowInSeconds = 1_800_000_000;
+	const validPayload = {
+		aud: "google-client-id",
+		email: "sara@example.com",
+		email_verified: true,
+		exp: nowInSeconds + 60,
+		iss: "https://accounts.google.com",
+		sub: "google-sub",
+	};
+
+	it("valida issuer, audience e expiracao do payload", () => {
+		const payload = assertGoogleIdTokenPayload(
+			validPayload,
+			["google-client-id"],
+			nowInSeconds,
+		);
+
+		expect(payload).toMatchObject({
+			email: "sara@example.com",
+			emailVerified: true,
+			sub: "google-sub",
+		});
+	});
+
+	it("rejeita payload com audience diferente", () => {
+		expect(() =>
+			assertGoogleIdTokenPayload(
+				{ ...validPayload, aud: "other-client-id" },
+				["google-client-id"],
+				nowInSeconds,
+			),
+		).toThrow("Token do Google inválido");
+	});
+
+	it("rejeita payload com issuer invalido", () => {
+		expect(() =>
+			assertGoogleIdTokenPayload(
+				{ ...validPayload, iss: "https://malicious.example.com" },
+				["google-client-id"],
+				nowInSeconds,
+			),
+		).toThrow("Token do Google inválido");
+	});
+
+	it("rejeita payload expirado", () => {
+		expect(() =>
+			assertGoogleIdTokenPayload(
+				{ ...validPayload, exp: nowInSeconds },
+				["google-client-id"],
+				nowInSeconds,
+			),
+		).toThrow("Token do Google inválido");
+	});
+
+	it("valida assinatura RS256 usando chave publica JWK", async () => {
+		const { token, jwk } = createSignedGoogleIdToken(validPayload);
+		const fetchFn = vi.fn().mockResolvedValue({
+			ok: true,
+			headers: {
+				get: vi.fn(() => "public, max-age=3600"),
+			},
+			json: vi.fn(async () => ({
+				keys: [jwk],
+			})),
+		});
+		const verifier = new GoogleJwtIdTokenVerifier(
+			fetchFn,
+			() => nowInSeconds * 1000,
+		);
+
+		const payload = await verifier.verify(token, ["google-client-id"]);
+
+		expect(fetchFn).toHaveBeenCalledWith(
+			"https://www.googleapis.com/oauth2/v3/certs",
+		);
+		expect(payload.email).toBe("sara@example.com");
+		expect(payload.sub).toBe("google-sub");
 	});
 });
 

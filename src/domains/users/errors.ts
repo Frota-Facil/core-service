@@ -23,3 +23,21 @@ export const InvalidCredentialsError = createError(
 	"Credenciais inválidas",
 	401,
 );
+
+export const GoogleAuthNotConfiguredError = createError(
+	"GoogleAuthNotConfiguredError",
+	"Google Sign-In não configurado",
+	500,
+);
+
+export const InvalidGoogleTokenError = createError(
+	"InvalidGoogleTokenError",
+	"Token do Google inválido",
+	401,
+);
+
+export const GoogleTokenVerificationUnavailableError = createError(
+	"GoogleTokenVerificationUnavailableError",
+	"Não foi possível validar token do Google",
+	503,
+);
